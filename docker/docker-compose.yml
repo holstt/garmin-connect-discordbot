@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  garmin-bot:
+    restart: "always"
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    # Mount .env file at startup (left path should be local path of your config file)
+    volumes:
+      - ${ENV_PATH:-../../.env}:/app/.env:ro # Will use ENV_PATH if non-empty
+    environment:
+      - PYTHONUNBUFFERED=1
