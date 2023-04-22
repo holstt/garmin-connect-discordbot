@@ -20,6 +20,7 @@ class DiscordApiClient:
         service_name: str,  # Username of discord message will be the service name
     ) -> None:
         self._webhook_url = webhook_url
+
         self._base_client = DiscordWebhook(
             webhook_url, rate_limit_retry=True, username=service_name
         )

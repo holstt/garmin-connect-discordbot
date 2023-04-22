@@ -1,12 +1,14 @@
 import logging
 import random
 from datetime import date, datetime, timedelta, timezone
-from typing import Callable
+from typing import Callable, cast
 
+from apscheduler.events import EVENT_JOB_ERROR, JobExecutionEvent  # type: ignore
 from apscheduler.schedulers.background import BlockingScheduler  # type: ignore
 
 from src.application.garmin_service import GarminService
 from src.domain.health_metrics import HealthSummary
+from src.infra.discord_api_adapter import DiscordApiAdapter
 from src.infra.garmin_api_client import GarminApiClient
 from src.infra.time_provider import TimeProvider  # type: ignore
 
@@ -24,17 +26,22 @@ class GarminFetchDataScheduler:
         self,
         garmin_service: GarminService,
         time_provider: TimeProvider,
-        summary_ready_event: Callable[[HealthSummary], None],
         start_update_at_hour: int,  # TODO: Time type
+        summary_ready_event: Callable[[HealthSummary], None],
+        exception_event: Callable[[str], None],
     ):
         self._garmin_service = garmin_service
-        self._scheduler = BlockingScheduler(timezone="UTC")
         self._time_provider = time_provider
         self._summary_ready_event = summary_ready_event
         self._start_update_at_hour = start_update_at_hour
+        self._scheduler = BlockingScheduler(timezone="UTC")
+        self.exception_event = exception_event
+
+        # Add error listener
+        self._scheduler.add_listener(self._on_exception, EVENT_JOB_ERROR)
 
         # At startup, run job immediately
-        next_run_time = self._time_provider.get_current_time() + timedelta(seconds=5)
+        next_run_time = self._time_provider.get_current_time() + timedelta(seconds=2)
 
         self._add_job(next_run_time)
 
@@ -101,6 +108,11 @@ class GarminFetchDataScheduler:
 
     def _on_summary_ready(self, healthSummary: HealthSummary):
         self._summary_ready_event(healthSummary)
+
+    def _on_exception(self, event: JobExecutionEvent) -> None:
+        if event.exception:
+            # Raise exception event
+            self.exception_event(event.traceback)  # type: ignore
 
     def run(self):
         logger.info("Starting scheduler with jobs:")

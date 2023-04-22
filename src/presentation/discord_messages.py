@@ -12,13 +12,11 @@ logger = logging.getLogger(__name__)
 
 
 # Send message with exception stack trace
-class DiscordExceptionMessage(DiscordEmbed):
-    def __init__(self):
-        stack_trace = traceback.format_exc()  # Get stack trace of exception
-
+class DiscordErrorMessage(DiscordEmbed):
+    def __init__(self, error_message: str):
         super().__init__(
-            title=f"⚠ Exception ⚠",
-            description=f"```{stack_trace}```",
+            title=f"⚠ Error ⚠",
+            description=f"```{error_message}```",
             color=0xFF0000,
         )
 

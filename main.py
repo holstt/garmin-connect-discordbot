@@ -1,4 +1,5 @@
 import logging
+import traceback
 from pathlib import Path
 from typing import Optional
 
@@ -11,9 +12,15 @@ from src.infra.discord_api_client import DiscordApiClient
 from src.infra.garmin_api_client import GarminApiClient, GarminBaseClient
 from src.infra.time_provider import TimeProvider
 from src.presentation.login_prompt import LoginPrompt
-from src.presentation.summary_ready_handler import HealthSummaryReadyEventHandler
+from src.presentation.summary_ready_handler import (
+    ExceptionOccurredEventHandler,
+    HealthSummaryReadyEventHandler,
+)
 
 logger = logging.getLogger(__name__)
+discord_api_adapter: Optional[
+    DiscordApiAdapter
+] = None  # Global access to notify discord on unhandled exceptions
 
 
 def main() -> None:
@@ -48,6 +55,8 @@ def authenticate_client(email: str, password: str, session_path: Optional[Path])
 def create_scheduler(
     webhook_url: str, base_client: GarminBaseClient, start_update_at_hour: int
 ) -> GarminFetchDataScheduler:
+    global discord_api_adapter
+
     time_provider = TimeProvider()
 
     garmin_client = GarminApiClient(base_client)
@@ -56,18 +65,27 @@ def create_scheduler(
     discord_client = DiscordApiClient(
         webhook_url, time_provider, service_name="garmin-health-bot"
     )
-    discord_service = DiscordApiAdapter(discord_client)
+    discord_api_adapter = DiscordApiAdapter(discord_client)
 
-    event_handler = HealthSummaryReadyEventHandler(discord_service)
+    summary_ready_handler = HealthSummaryReadyEventHandler(discord_api_adapter)
+    error_handler = ExceptionOccurredEventHandler(discord_api_adapter)
 
     scheduler = GarminFetchDataScheduler(
         garmin_service,
         time_provider,
-        summary_ready_event=event_handler.handle,
         start_update_at_hour=start_update_at_hour,
+        summary_ready_event=summary_ready_handler.handle,
+        exception_event=error_handler.handle,
     )
 
     return scheduler
+
+
+def send_exception_to_discord() -> None:
+    global discord_api_adapter
+    if discord_api_adapter:
+        stack_trace = traceback.format_exc()  # Get stack trace of exception
+        discord_api_adapter.send_error_message(stack_trace)
 
 
 if __name__ == "__main__":
@@ -77,5 +95,6 @@ if __name__ == "__main__":
     except (KeyboardInterrupt, SystemExit):
         pass
     except Exception as e:
+        send_exception_to_discord()
         logger.exception(f"Unhandled exception occurred: {e}")
         raise e

@@ -14,3 +14,12 @@ class HealthSummaryReadyEventHandler:
     def handle(self, summary: HealthSummary) -> None:
         logger.info(f"Handling event: Health summary ready")
         self.discord_service.send_summary_message(summary)
+
+
+class ExceptionOccurredEventHandler:
+    def __init__(self, discord_service: DiscordApiAdapter):
+        self.discord_service = discord_service
+
+    def handle(self, exception: str) -> None:
+        logger.info(f"Handling event: Exception occurred")
+        self.discord_service.send_error_message(exception)
