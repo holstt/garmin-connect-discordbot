@@ -1,51 +1,81 @@
-
 import logging
-import time
-import argparse
-from dotenv import load_dotenv
 from pathlib import Path
-import asyncio
-import src.garmin_service as garmin_service
-from datetime import timedelta
-from datetime import datetime
+from typing import Optional
 
-# Setup logging
-logging.basicConfig(
-    level=logging.NOTSET,
-    format='[%(asctime)s] [%(levelname)s] %(name)-25s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-)
-logging.Formatter.converter = time.gmtime  # Use UTC
+import src.config as config
+from src import utils
+from src.application.garmin_service import GarminService
+from src.application.scheduler_service import GarminFetchDataScheduler
+from src.infra.discord_api_adapter import DiscordApiAdapter
+from src.infra.discord_api_client import DiscordApiClient
+from src.infra.garmin_api_client import GarminApiClient, GarminBaseClient
+from src.infra.time_provider import TimeProvider
+from src.presentation.login_prompt import LoginPrompt
+from src.presentation.summary_ready_handler import HealthSummaryReadyEventHandler
+
 logger = logging.getLogger(__name__)
 
 
-# Load args
-ap = argparse.ArgumentParser()
-ap.add_argument("-e", "--env", required=False,
-                help="Path of .env file", type=str, default=".env")
-args = vars(ap.parse_args())
+def main() -> None:
+    """
+    The main function that retrieves environment variables, sets up dependencies, and runs the scheduler.
+    """
+    email, password, webhook_url, session_path, start_update_at_hour = config.get_env()
+    email, password = get_input_credentials_if_needed(email, password)
+    garmin_base_client = authenticate_client(email, password, session_path)
+    scheduler = create_scheduler(webhook_url, garmin_base_client, start_update_at_hour)
+    scheduler.run()
 
 
-async def main():
-    env_path: str = args["env"]
-    if not Path(env_path).exists():
-        raise IOError(f"No .env file found at '{env_path}'")
+def get_input_credentials_if_needed(email: Optional[str], password: Optional[str]):
+    if not email or not password:
+        logger.info("No credentials provided. Prompting for credentials.")
+        email, password = LoginPrompt().show()
+    return email, password
 
-    logging.info(f"Loading .env from {env_path}")
 
-    # Load environment
-    load_dotenv(dotenv_path=env_path)
+def authenticate_client(email: str, password: str, session_path: Optional[Path]):
+    base_client = GarminBaseClient(
+        email,
+        password,
+        session_file_path=Path(session_path) if session_path else None,
+    )
+    base_client.login()
+    return base_client
 
-    while True:
-        logger.info("Getting health summary...")
-        health_summary = await garmin_service.get_health_summary()
-        print(health_summary)
-        logger.info("Waiting for next run at: " + str(datetime.utcnow() + timedelta(days=1)))
-        await asyncio.sleep(timedelta(days=1).total_seconds())
 
-if __name__ == '__main__':
+# Resolves dependencies and creates scheduler
+def create_scheduler(
+    webhook_url: str, base_client: GarminBaseClient, start_update_at_hour: int
+) -> GarminFetchDataScheduler:
+    time_provider = TimeProvider()
+
+    garmin_client = GarminApiClient(base_client)
+    garmin_service = GarminService(garmin_client)
+
+    discord_client = DiscordApiClient(
+        webhook_url, time_provider, service_name="garmin-health-bot"
+    )
+    discord_service = DiscordApiAdapter(discord_client)
+
+    event_handler = HealthSummaryReadyEventHandler(discord_service)
+
+    scheduler = GarminFetchDataScheduler(
+        garmin_service,
+        time_provider,
+        summary_ready_event=event_handler.handle,
+        start_update_at_hour=start_update_at_hour,
+    )
+
+    return scheduler
+
+
+if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        utils.setup_logging()
+        main()
+    except (KeyboardInterrupt, SystemExit):
+        pass
     except Exception as e:
         logger.exception(f"Unhandled exception occurred: {e}")
         raise e

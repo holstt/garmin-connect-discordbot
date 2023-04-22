@@ -1,5 +1,7 @@
 # CUSTOM
 .vscode
+session*
+**.json
 
 
 # Byte-compiled / optimized / DLL files
