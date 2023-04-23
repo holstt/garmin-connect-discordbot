@@ -9,6 +9,11 @@ services:
     # Mount .env file at startup (left path should be local path of your config file)
     volumes:
       - ${ENV_PATH:-../../.env}:/app/.env:ro # Will use ENV_PATH if non-empty
-      - "../../session:/session"
+      - "../../session:/session" # Should have write permission to this folder
+
+    user: "${UID}" # Run as this (unprivileged) user instead of root. If UID is empty, will run as root.
     environment:
-      - PYTHONUNBUFFERED=1
+      - PYTHONUNBUFFERED=1 # Prevents Python from buffering stdout and stder
+      # Set poetry config for the injected docker user
+      # When running in a container, we just use system env instead of creating a virtualenv
+      - POETRY_VIRTUALENVS_CREATE=false

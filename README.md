@@ -2,7 +2,7 @@
 
 Discord bot providing a daily summary of your Garmin Connect health metrics
 
-<img src="docs/discord_message_example.png" width=60%>
+<img src="docs/discord_message_example.png" width=80%>
 
 ## Features
 
@@ -86,7 +86,7 @@ poetry shell
 python ./main.py
 ```
 
-- If you use an `.env` file to configure the environment, it is asummed to be placed in the root of the project folder. Alternatively, you can provide a custom path for your environment file using `./main.py -e path/to/env`
+- If you use an `.env` file to configure the environment, the program assumes it is placed in the root of the project folder. Alternatively, you can provide a custom path for your environment file using `./main.py -e path/to/env`
 
 ## Docker 🐳
 
@@ -104,12 +104,28 @@ Inspect the configuration in `docker-compose.yml`, especially the `volumes` opti
 docker-compose up --build
 ```
 
-To prevent the container from running as root, you can set the `UID` environment variable to match the current user's ID. The Docker Compose configuration is set up such that it will run the container as this user rather than as root:
+To prevent the container from running as root, you can set the `UID` environment variable to the id of an unpriviliged user before running the container. The Docker Compose configuration will then run the container as this user instead of the default root user.
 
-Bash:
-`export UID && docker-compose up --build`
+**Bash**
 
-Powershell:
-`$env:UID=$(id -u); docker-compose up --build`
+Switch to the container user and run:
+
+```
+export UID && docker-compose up --build
+```
+
+**Powershell**
+
+Using WSL, switch to the container user and print the user id:
+
+```
+id -u
+```
+
+Then in Powershell, replacing `<USER_ID>` with this id (e.g. `1000`):
+
+```
+$env:UID=<USER_ID>; docker-compose up --build
+```
 
 NB: Remember this user must have the necessary permissions to access the volumes specified in `docker-compose.yml`.
