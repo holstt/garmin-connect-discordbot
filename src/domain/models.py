@@ -4,8 +4,33 @@ from datetime import timedelta
 
 from src.infra.garmin_dtos.garmin_hrv_response import GarminHrvResponse
 from src.infra.garmin_dtos.garmin_sleep_response import GarminSleepResponse
+from src.infra.garmin_dtos.garmin_sleep_score_response import GarminSleepScoreResponse
 
 # NB! There may be gaps in data if metric not registered for some reason (e.g. if not always wearing device during sleep)
+
+
+class SleepScoreMetrics:
+    def __init__(self, sleep_data: GarminSleepScoreResponse):
+        self._entries = sorted(sleep_data.entries, key=lambda x: x.calendar_date)
+
+    @property
+    # Get the most recent entry
+    def current(self) -> int:
+        return self._entries[-1].value
+
+    @property
+    # Returns average for the period
+    def avg(self) -> float:
+        total = sum([entry.value for entry in self._entries])
+        avg = total / len(self._entries)
+        return avg
+
+    @property
+    def diff_to_average(self) -> float:
+        return self.current - self.avg
+
+    def get_diff_to_target(self, target: int) -> int:
+        return self.current - target
 
 
 class SleepMetrics:  # XXX: // SleepSummary
@@ -36,7 +61,12 @@ class SleepMetrics:  # XXX: // SleepSummary
 
 class HrvMetrics:
     def __init__(self, hrv_data: GarminHrvResponse) -> None:
-        self._entries = sorted(hrv_data.hrv_summaries, key=lambda x: x.calendar_date)
+        self._entries = sorted(hrv_data.entries, key=lambda x: x.calendar_date)
+
+    @property
+    # Returns none if no hrv registered for the night
+    def current(self) -> int | None:
+        return self._entries[-1].last_night_avg
 
     @property
     # Get the most recent registered weekly hrv average
@@ -45,12 +75,7 @@ class HrvMetrics:
 
     @property
     # Returns none if no hrv registered for the night
-    def current(self) -> int | None:
-        return self._entries[-1].last_night_avg
-
-    @property
-    # Returns none if no hrv registered for the night
-    def current_diff_to_average(self) -> int | None:
+    def diff_to_average(self) -> int | None:
         return self.current - self.weekly_avg if self.current else None
 
     @property
@@ -64,3 +89,4 @@ class HealthSummary:
     date: datetime.date
     sleep: SleepMetrics
     hrv: HrvMetrics
+    sleep_score: SleepScoreMetrics

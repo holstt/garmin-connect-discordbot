@@ -1,8 +1,11 @@
 import json
 import logging
 import time
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 def setup_logging():
@@ -23,5 +26,10 @@ def setup_logging():
 
 
 def dump_json_to_file(json_data: dict[Any, Any], file_path: str | Path):
+    logger.debug(f"Dumping json to file '{file_path}'")
     with open(file_path, "w") as f:
         json.dump(json_data, f, indent=4)
+
+
+def to_YYYYMMDD(date: date) -> str:
+    return date.strftime("%Y-%m-%d")

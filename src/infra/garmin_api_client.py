@@ -1,11 +1,14 @@
 import json
 import logging
 from datetime import date, datetime
+from enum import Enum
 from pathlib import Path
 from typing import Any, Optional
 
+import src.utils as utils
 from src.infra.garmin_dtos.garmin_hrv_response import GarminHrvResponse
 from src.infra.garmin_dtos.garmin_sleep_response import GarminSleepResponse
+from src.infra.garmin_dtos.garmin_sleep_score_response import GarminSleepScoreResponse
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +26,9 @@ class GarminBaseClient(Garmin):
         self.password = password
         self._session_file_path = session_file_path
 
-    def login(self):
+    def login(
+        self,
+    ):
         logger.info("Login to Garmin Connect...")
 
         has_valid_session = False
@@ -76,26 +81,71 @@ class GarminBaseClient(Garmin):
         super().login()
 
 
+# XXX: garmin_endpoints.py
+class GarminEndpoint(Enum):
+    DAILY_SLEEP = "proxy/wellness-service/stats/sleep/daily/{start_date}/{end_date}"
+    DAILY_SLEEP_SCORE = (
+        "proxy/wellness-service/stats/daily/sleep/score/{start_date}/{end_date}"
+    )
+
+
+# Wraps the base client from garminconnect library. We need to modify the endpoint urls in order to get a range of data instead of just one day
 class GarminApiClient:
     def __init__(self, base_client: GarminBaseClient) -> None:
         self.base_client = base_client  # Base client from library
 
-    def get_daily_sleep(self, start_date: date, end_date: date) -> GarminSleepResponse:
-        # Use internal client "modern_rest_client" directly to get better data. Url not in library.
-        response_json: dict[str, Any] = self.base_client.modern_rest_client.get(  # type: ignore
-            f"proxy/wellness-service/stats/sleep/daily/{start_date.isoformat()}/{end_date.isoformat()}"
-        ).json()
+    # Use internal client "modern_rest_client" directly to get better data for urls not in library
+    def get(self, endpoint: str) -> dict[str, Any]:
+        response_json: dict[str, Any] = self.base_client.modern_rest_client.get(endpoint).json()  # type: ignore
+        return response_json  # type: ignore
 
-        # Convert to dto object
-        response_dto = GarminSleepResponse.from_list(response_json)
+    # Injects start and end date into endpoint url
+    def _format_endpoint(
+        self, endpoint_template: str, start_date: date, end_date: date
+    ) -> str:
+        return endpoint_template.format(
+            start_date=utils.to_YYYYMMDD(start_date),
+            end_date=utils.to_YYYYMMDD(end_date),
+        )
 
-        return response_dto
+    def get_data(
+        self, endpoint: GarminEndpoint, start_date: date, end_date: date
+    ) -> dict[str, Any]:
+        """
+        Fetch data from the specified endpoint between start_date and end_date.
+        """
+        endpoint_template = endpoint.value
+        endpoint_str = self._format_endpoint(endpoint_template, start_date, end_date)
+        return self.get(endpoint_str)
 
-    def get_daily_hrv(self, start_date: date, end_date: date) -> GarminHrvResponse:
-        assert self.base_client is not None
+    # XXX: Not using same pattern as get_data() atm
+    def get_daily_hrv(self, start_date: date, end_date: date) -> dict[str, Any]:
         # Note: cdate argument is not validated by garminconnect library but just concatenated to base url, so we pass our own custom string for better data
         response_json = self.base_client.get_hrv_data(
-            cdate=f"daily/{start_date.isoformat()}/{end_date.isoformat()}"
+            cdate=f"daily/{utils.to_YYYYMMDD(start_date)}/{utils.to_YYYYMMDD(end_date)}"
         )
-        response_dto = GarminHrvResponse.from_dict(response_json)
-        return response_dto
+        return response_json
+
+
+# Adapts the GarminApiClient to return DTOs instead of raw json
+class GarminApiAdapter:
+    def __init__(self, api_client: GarminApiClient) -> None:
+        self._api_client = api_client
+
+    def get_daily_sleep(self, start_date: date, end_date: date) -> GarminSleepResponse:
+        json = self._api_client.get_data(
+            GarminEndpoint.DAILY_SLEEP, start_date, end_date
+        )
+        return GarminSleepResponse.from_list(json)
+
+    def get_daily_sleep_score(
+        self, start_date: date, end_date: date
+    ) -> GarminSleepScoreResponse:
+        json = self._api_client.get_data(
+            GarminEndpoint.DAILY_SLEEP_SCORE, start_date, end_date
+        )
+        return GarminSleepScoreResponse.from_list(json)
+
+    def get_daily_hrv(self, start_date: date, end_date: date) -> GarminHrvResponse:
+        json = self._api_client.get_daily_hrv(start_date, end_date)
+        return GarminHrvResponse.from_dict(json)

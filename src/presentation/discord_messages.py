@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 from discord_webhook import DiscordEmbed, DiscordWebhook
 
-from src.domain.models import HealthSummary, HrvMetrics, SleepMetrics
+from src.domain.models import HealthSummary, HrvMetrics, SleepMetrics, SleepScoreMetrics
 from src.infra.time_provider import TimeProvider
 
 logger = logging.getLogger(__name__)
@@ -29,9 +29,8 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
         title = f"Garmin Health Metrics, {health_summary.date.strftime('%d-%m-%Y')}"
         msg = ""
 
-        # Sleep
         msg += self.create_sleep(health_summary.sleep)
-        # Hrv
+        msg += self.create_sleep_score(health_summary.sleep_score)
         msg += self.create_hrv(health_summary.hrv)
 
         super().__init__(
@@ -44,12 +43,21 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
         hrv_recent_str = hrv_metrics.current
         week_avg_str = hrv_metrics.weekly_avg
         diff_to_avg_str = (
-            _val_to_signed_str(hrv_metrics.current_diff_to_average)
-            if hrv_metrics.current_diff_to_average
+            _value_to_signed_str(hrv_metrics.diff_to_average)
+            if hrv_metrics.diff_to_average
             else "N/A"
         )
 
         return f"```💓 HRV: {hrv_recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
+
+    def create_sleep_score(self, metrics: SleepScoreMetrics) -> str:
+        recent_str = metrics.current
+        week_avg_str = round(metrics.avg)
+        diff_to_avg_str = (
+            _value_to_signed_str(round(metrics.diff_to_average))
+        )
+
+        return f"```😴 Sleep Score: {recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
     def create_sleep(self, sleep_metrics: SleepMetrics) -> str:
         sleep_recent_str = _format_timedelta(sleep_metrics.current)
@@ -64,7 +72,7 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
         return f"```💤 Sleep: {sleep_recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str}, Δ 8h: {diff_to_8h_str})```"
 
 
-def _val_to_signed_str(value: float) -> str:
+def _value_to_signed_str(value: float) -> str:
     return f"{_get_sign(value)}{abs(value)}"
 
 

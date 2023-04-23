@@ -2,7 +2,7 @@
 .vscode
 session*
 **.json
-manual_tests.py
+manual_tests*
 
 
 # Byte-compiled / optimized / DLL files

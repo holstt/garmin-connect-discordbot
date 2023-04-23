@@ -1,22 +1,15 @@
 import logging
 import traceback
-from dataclasses import dataclass
 from pathlib import Path
-from typing import NamedTuple, Optional, Union
+from typing import Optional
 
 import src.config as config
+import src.dependencies as dependencies
 from src import utils
-from src.application.garmin_service import GarminService
 from src.application.scheduler_service import GarminFetchDataScheduler
 from src.infra.discord_api_adapter import DiscordApiAdapter
-from src.infra.discord_api_client import DiscordApiClient
-from src.infra.garmin_api_client import GarminApiClient, GarminBaseClient
-from src.infra.time_provider import TimeProvider
+from src.infra.garmin_api_client import GarminBaseClient
 from src.presentation.login_prompt import LoginPrompt
-from src.presentation.summary_ready_handler import (
-    ExceptionOccurredEventHandler,
-    HealthSummaryReadyEventHandler,
-)
 
 logger = logging.getLogger(__name__)
 discord_api_adapter: Optional[
@@ -63,55 +56,8 @@ def create_scheduler(
     webhook_url: str, base_client: GarminBaseClient, start_update_at_hour: int
 ) -> GarminFetchDataScheduler:
     global discord_api_adapter
-
-    dependencies = resolve_dependencies(webhook_url, base_client, start_update_at_hour)
-
-    return dependencies.scheduler
-
-
-def resolve_dependencies(
-    webhook_url: str, base_client: GarminBaseClient, start_update_at_hour: int
-):
-    time_provider = TimeProvider()
-
-    garmin_client = GarminApiClient(base_client)
-    garmin_service = GarminService(garmin_client)
-
-    discord_client = DiscordApiClient(
-        webhook_url, time_provider, service_name="garmin-health-bot"
-    )
-    discord_api_adapter = DiscordApiAdapter(discord_client)
-
-    summary_ready_handler = HealthSummaryReadyEventHandler(discord_api_adapter)
-    error_handler = ExceptionOccurredEventHandler(discord_api_adapter)
-
-    scheduler = GarminFetchDataScheduler(
-        garmin_service,
-        time_provider,
-        start_update_at_hour=start_update_at_hour,
-        summary_ready_event=summary_ready_handler.handle,
-        exception_event=error_handler.handle,
-    )
-
-    return Dependencies(
-        time_provider,
-        garmin_client,
-        garmin_service,
-        discord_client,
-        summary_ready_handler,
-        error_handler,
-        scheduler,
-    )
-
-
-class Dependencies(NamedTuple):
-    time_provider: TimeProvider
-    garmin_client: GarminApiClient
-    garmin_service: GarminService
-    discord_client: DiscordApiClient
-    summary_ready_handler: HealthSummaryReadyEventHandler
-    error_handler: ExceptionOccurredEventHandler
-    scheduler: GarminFetchDataScheduler
+    deps = dependencies.resolve(webhook_url, base_client, start_update_at_hour)
+    return deps.scheduler
 
 
 def send_exception_to_discord() -> None:
