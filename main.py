@@ -1,7 +1,8 @@
 import logging
 import traceback
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import NamedTuple, Optional, Union
 
 import src.config as config
 from src import utils
@@ -27,7 +28,13 @@ def main() -> None:
     """
     The main function that retrieves environment variables, sets up dependencies, and runs the scheduler.
     """
-    email, password, webhook_url, session_path, start_update_at_hour = config.get_env()
+    (
+        email,
+        password,
+        webhook_url,
+        session_path,
+        start_update_at_hour,
+    ) = config.get_env_variables()
     email, password = get_input_credentials_if_needed(email, password)
     garmin_base_client = authenticate_client(email, password, session_path)
     scheduler = create_scheduler(webhook_url, garmin_base_client, start_update_at_hour)
@@ -57,6 +64,14 @@ def create_scheduler(
 ) -> GarminFetchDataScheduler:
     global discord_api_adapter
 
+    dependencies = resolve_dependencies(webhook_url, base_client, start_update_at_hour)
+
+    return dependencies.scheduler
+
+
+def resolve_dependencies(
+    webhook_url: str, base_client: GarminBaseClient, start_update_at_hour: int
+):
     time_provider = TimeProvider()
 
     garmin_client = GarminApiClient(base_client)
@@ -78,14 +93,33 @@ def create_scheduler(
         exception_event=error_handler.handle,
     )
 
-    return scheduler
+    return Dependencies(
+        time_provider,
+        garmin_client,
+        garmin_service,
+        discord_client,
+        summary_ready_handler,
+        error_handler,
+        scheduler,
+    )
+
+
+class Dependencies(NamedTuple):
+    time_provider: TimeProvider
+    garmin_client: GarminApiClient
+    garmin_service: GarminService
+    discord_client: DiscordApiClient
+    summary_ready_handler: HealthSummaryReadyEventHandler
+    error_handler: ExceptionOccurredEventHandler
+    scheduler: GarminFetchDataScheduler
 
 
 def send_exception_to_discord() -> None:
     global discord_api_adapter
     if discord_api_adapter:
-        stack_trace = traceback.format_exc()  # Get stack trace of exception
-        discord_api_adapter.send_error_message(stack_trace)
+        # Get stack trace of exception
+        stack_trace = traceback.format_exc()
+        discord_api_adapter.send_error(stack_trace)
 
 
 if __name__ == "__main__":

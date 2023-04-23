@@ -1,5 +1,8 @@
+import json
 import logging
 import time
+from pathlib import Path
+from typing import Any
 
 
 def setup_logging():
@@ -17,3 +20,8 @@ def setup_logging():
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
     return logger
+
+
+def dump_json_to_file(json_data: dict[Any, Any], file_path: str | Path):
+    with open(file_path, "w") as f:
+        json.dump(json_data, f, indent=4)

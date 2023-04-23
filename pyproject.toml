@@ -12,6 +12,7 @@ python-dotenv = "^1.0.0"
 garminconnect = "^0.1.54"
 python-dateutil = "^2.8.2"
 apscheduler = "^3.10.1"
+hypothesis = "^6.72.1"
 
 
 [tool.poetry.group.dev.dependencies]

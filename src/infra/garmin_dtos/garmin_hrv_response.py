@@ -110,7 +110,7 @@ class HrvSummary:
 
 @dataclass
 class GarminHrvResponse:
-    hrv_summaries: List[HrvSummary]
+    hrv_summaries: list[HrvSummary]
     user_profile_pk: int
 
     @staticmethod

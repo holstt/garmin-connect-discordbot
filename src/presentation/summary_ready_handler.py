@@ -1,6 +1,6 @@
 import logging
 
-from src.domain.health_metrics import HealthSummary
+from src.domain.models import HealthSummary
 from src.infra.discord_api_adapter import DiscordApiAdapter
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ class HealthSummaryReadyEventHandler:
     # When a health summary is ready, send it to discord
     def handle(self, summary: HealthSummary) -> None:
         logger.info(f"Handling event: Health summary ready")
-        self.discord_service.send_summary_message(summary)
+        self.discord_service.send_health_summary(summary)
 
 
 class ExceptionOccurredEventHandler:
@@ -22,4 +22,4 @@ class ExceptionOccurredEventHandler:
 
     def handle(self, exception: str) -> None:
         logger.info(f"Handling event: Exception occurred")
-        self.discord_service.send_error_message(exception)
+        self.discord_service.send_error(exception)

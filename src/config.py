@@ -14,13 +14,13 @@ logger = logging.getLogger(__name__)
 SESSION_FILE_NAME = "session.json"
 
 
-def get_env():
-    load_env()
+def get_env_variables():
+    _load_env()
 
     # Get required
-    webhook_url = get_env_variable_or_fail("WEBHOOK_URL")
-    notify_at_hour = int(get_env_variable_or_fail("NOTIFY_AT_HOUR"))
-    time_zone_str = get_env_variable_or_fail("TIME_ZONE")
+    webhook_url = _get_env_variable_or_fail("WEBHOOK_URL")
+    notify_at_hour = int(_get_env_variable_or_fail("NOTIFY_AT_HOUR"))
+    time_zone_str = _get_env_variable_or_fail("TIME_ZONE")
 
     # Get optionals
     if path_value := os.environ.get("SESSION_DIRECTORY_PATH"):
@@ -35,7 +35,7 @@ def get_env():
     email: Optional[str] = os.environ.get("GARMIN_EMAIL")
     password: Optional[str] = os.environ.get("GARMIN_PASSWORD")
 
-    notify_at_hour = get_notify_time(notify_at_hour, time_zone_str)
+    notify_at_hour = _get_notify_time(notify_at_hour, time_zone_str)
 
     return (
         email,
@@ -46,8 +46,8 @@ def get_env():
     )
 
 
-def load_env():
-    args = get_args()
+def _load_env():
+    args = _get_args()
     env_path_input: str = args["env"]
 
     env_path = _get_env_path(path_str=env_path_input)
@@ -58,7 +58,7 @@ def load_env():
         load_dotenv(dotenv_path=env_path)
 
 
-def get_notify_time(notify_at_hour: int, time_zone: str):
+def _get_notify_time(notify_at_hour: int, time_zone: str):
     # Create a date in the specified time zone
     local_tz = ZoneInfo(time_zone)
     local_dt = datetime.now(tz=local_tz).replace(hour=notify_at_hour)
@@ -91,7 +91,7 @@ def _get_env_path(path_str: Optional[str]) -> Path | None:
         return None
 
 
-def get_args():
+def _get_args():
     # Load args
     ap = argparse.ArgumentParser()
     ap.add_argument(
@@ -101,7 +101,7 @@ def get_args():
     return args
 
 
-def get_env_variable_or_fail(name: str) -> str:
+def _get_env_variable_or_fail(name: str) -> str:
     value = os.environ.get(name)
     if not value:
         raise ValueError(

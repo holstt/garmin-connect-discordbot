@@ -22,7 +22,10 @@ class DiscordApiClient:
         self._webhook_url = webhook_url
 
         self._base_client = DiscordWebhook(
-            webhook_url, rate_limit_retry=True, username=service_name
+            webhook_url,
+            rate_limit_retry=True,
+            username=service_name,
+            avatar_url="https://is2-ssl.mzstatic.com/image/thumb/Purple116/v4/66/ee/6a/66ee6ac7-8c44-0f33-757e-1024b3a7489c/AppIcon-0-1x_U007emarketing-0-6-0-sRGB-85-220.png/256x256bb.jpg",
         )
         self._time_provider = time_provider
 
@@ -31,7 +34,7 @@ class DiscordApiClient:
         self._base_client.add_embed(embed)
 
         # Always add time to footer
-        embed.set_footer(text=f"{self._time_provider.get_current_time()}")
+        # embed.set_footer(text=f"{self._time_provider.get_current_time()}")
 
         try:
             response = self._base_client.execute(remove_embeds=True)

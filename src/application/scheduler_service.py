@@ -1,15 +1,13 @@
 import logging
 import random
-from datetime import date, datetime, timedelta, timezone
-from typing import Callable, cast
+from datetime import date, datetime, timedelta
+from typing import Callable
 
 from apscheduler.events import EVENT_JOB_ERROR, JobExecutionEvent  # type: ignore
 from apscheduler.schedulers.background import BlockingScheduler  # type: ignore
 
 from src.application.garmin_service import GarminService
-from src.domain.health_metrics import HealthSummary
-from src.infra.discord_api_adapter import DiscordApiAdapter
-from src.infra.garmin_api_client import GarminApiClient
+from src.domain.models import HealthSummary
 from src.infra.time_provider import TimeProvider  # type: ignore
 
 logger = logging.getLogger(__name__)

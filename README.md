@@ -2,6 +2,8 @@
 
 Discord bot providing a daily summary of your Garmin Connect health metrics
 
+<img src="docs/discord_message_example.png" width=60%>
+
 ## Features
 
 - Get daily summary as soon as yesterday's metrics become available on Garmin Connect (i.e. when your Garmin device has synced with the phone)

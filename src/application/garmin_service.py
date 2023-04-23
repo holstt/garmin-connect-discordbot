@@ -1,10 +1,8 @@
 import logging
 from datetime import date, datetime, timedelta
-
-# import pwinput
 from typing import Any, Optional
 
-from src.domain.health_metrics import HealthSummary, HrvMetrics, SleepMetrics
+from src.domain.models import HealthSummary, HrvMetrics, SleepMetrics
 from src.infra.garmin_api_client import GarminApiClient
 from src.infra.garmin_dtos.garmin_hrv_response import GarminHrvResponse
 from src.infra.garmin_dtos.garmin_sleep_response import GarminSleepResponse

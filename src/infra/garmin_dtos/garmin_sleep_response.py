@@ -61,7 +61,7 @@ class SleepEntry:
 
 @dataclass
 class GarminSleepResponse:
-    entries: List[SleepEntry]
+    entries: list[SleepEntry]
 
     @staticmethod
     def from_list(obj: Any) -> "GarminSleepResponse":
