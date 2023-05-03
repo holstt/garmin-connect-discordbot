@@ -1,19 +1,25 @@
 version: "3.8"
 
+# NB: Use docker scripts ('docker.<env>.sh') instead of running this compose config directly
+
+name: garmin # Project name avoids prefix of parent directory
+
 services:
   app:
     restart: "no"
     build:
       context: ..
       dockerfile: docker/Dockerfile
-    # Mount .env file at startup (left path should be local path of your config file)
+    # Mount local paths to container. Should exist on host with correct permissions for the user running the container
     volumes:
-      - ${ENV_PATH:-../../.env}:/app/.env:ro # Will use ENV_PATH if non-empty
-      - "../../session:/session" # Should have write permission to this folder
+      - ${ENV_PATH}:/app/.env:ro
+      - ${CONTAINER_DATA_DIR}:/app/data # User should have read/write access to data directory
 
-    user: "${UID}" # Run as this (unprivileged) user instead of root. If UID is empty, will run as root.
+    user: "${DOCKER_USER_ID}:${DOCKER_GROUP_ID}" # Run as this (unprivileged) user instead of root. If DOCKER_USER_ID is empty, will run as root.
     environment:
       - PYTHONUNBUFFERED=1 # Prevents Python from buffering stdout and stder
       # Set poetry config for the injected docker user
       # When running in a container, we just use system env instead of creating a virtualenv
       - POETRY_VIRTUALENVS_CREATE=false
+      # This will overwrite the value of DATA_DIRECTORY_PATH set in the .env file. Should be the same as the volume mount above
+      - DATA_DIRECTORY_PATH=/app/data

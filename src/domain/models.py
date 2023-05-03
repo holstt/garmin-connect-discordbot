@@ -2,9 +2,9 @@ import datetime
 from dataclasses import dataclass
 from datetime import timedelta
 
-from src.infra.garmin_dtos.garmin_hrv_response import GarminHrvResponse
-from src.infra.garmin_dtos.garmin_sleep_response import GarminSleepResponse
-from src.infra.garmin_dtos.garmin_sleep_score_response import GarminSleepScoreResponse
+from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
+from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
+from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
 
 # NB! There may be gaps in data if metric not registered for some reason (e.g. if not always wearing device during sleep)
 

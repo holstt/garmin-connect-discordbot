@@ -12,15 +12,25 @@ logger = logging.getLogger(__name__)
 
 
 
-# Send message with exception stack trace
+# Send message with error
 class DiscordErrorMessage(DiscordEmbed):
-    def __init__(self, error_message: str):
+    def __init__(self, error_name: str, error_message: str):
         super().__init__(
-            title=f"⚠ Error ⚠",
+            title=f"⚠ Error: {error_name}",
             description=f"```{error_message}```",
             color=0xFF0000,
         )
 
+
+
+# Send message with exception stack trace
+class DiscordExceptionMessage(DiscordEmbed):
+    def __init__(self, exception: Exception, stack_trace: str):
+        super().__init__(
+            title=f"⚠ Exception: {type(exception).__name__}",
+            description=f"**{exception}**\n\n ```{stack_trace}```",
+            color=0xFF0000,
+        )
 
 # Health summary discord dto/message
 class DiscordHealthSummaryMessage(DiscordEmbed):
@@ -29,9 +39,9 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
         title = f"Garmin Health Metrics, {health_summary.date.strftime('%d-%m-%Y')}"
         msg = ""
 
-        msg += self.create_sleep(health_summary.sleep)
-        msg += self.create_sleep_score(health_summary.sleep_score)
-        msg += self.create_hrv(health_summary.hrv)
+        msg += self._create_sleep(health_summary.sleep)
+        msg += self._create_sleep_score(health_summary.sleep_score)
+        msg += self._create_hrv(health_summary.hrv)
 
         super().__init__(
             title=title,
@@ -39,18 +49,18 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
             color=0x10A5E1,
         )
 
-    def create_hrv(self, hrv_metrics: HrvMetrics) -> str:
+    def _create_hrv(self, hrv_metrics: HrvMetrics) -> str:
         hrv_recent_str = hrv_metrics.current
         week_avg_str = hrv_metrics.weekly_avg
         diff_to_avg_str = (
             _value_to_signed_str(hrv_metrics.diff_to_average)
-            if hrv_metrics.diff_to_average
+            if hrv_metrics.diff_to_average is not None
             else "N/A"
         )
 
         return f"```💓 HRV: {hrv_recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
-    def create_sleep_score(self, metrics: SleepScoreMetrics) -> str:
+    def _create_sleep_score(self, metrics: SleepScoreMetrics) -> str:
         recent_str = metrics.current
         week_avg_str = round(metrics.avg)
         diff_to_avg_str = (
@@ -59,7 +69,7 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
 
         return f"```😴 Sleep Score: {recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
-    def create_sleep(self, sleep_metrics: SleepMetrics) -> str:
+    def _create_sleep(self, sleep_metrics: SleepMetrics) -> str:
         sleep_recent_str = _format_timedelta(sleep_metrics.current)
         week_avg_str = _format_timedelta(sleep_metrics.avg)
         diff_to_avg_str = _format_timedelta(

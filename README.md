@@ -7,16 +7,16 @@ Discord bot providing a daily summary of your Garmin Connect health metrics
 ## Features
 
 - Get daily summary as soon as yesterday's metrics become available on Garmin Connect (i.e. when your Garmin device has synced with the phone)
-- Monitor metrics: Currently includes Sleep, HRV ...
+- Monitor metrics: Currently includes Sleep, Sleep Score, HRV
 - Spot trends: Compares the most recent metric value to its weekly average
-- Docker support: Easy deployment using Docker Compose
+- Docker support: Easy deployment using Docker Compose including scripts for a more secure setup in production environments
 
 **TODO:**
 
 - Add more metrics
 - Customize which metrics to include in the daily update
 - End of week summary with activity overview, weekly distance, frequency for each activity etc.
-- Generate chart and include as image in the daily update to visualize progress
+- Generate chart and include as image in the daily/weekly update to visualize progress
 
 ## Requirements
 
@@ -44,26 +44,26 @@ The bot is configured using environment variables, which can be specified in a `
 # URL for the Discord webhook
 WEBHOOK_URL=https://discordapp.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz
 
-# The hour (in 24-hour format) when the daily health summary should be fetched.
-# If data is not available at this time, the program will schedule a retry at a
+# The time in format HH:MM when the daily health summary should be fetched.
+# If data for today is not available yet, the program will schedule a retry at a
 # later time until the data becomes available
-NOTIFY_AT_HOUR=6
+NOTIFY_TIME_OF_DAY=06:00
 
 # The IANA time zone in which the NOTIFY_AT_HOUR is specified.
 # See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
 TIME_ZONE=Europe/Berlin
 
 # OPTIONAL: Garmin Connect credentials. If not provided, you will be prompted to
-# enter them when the program runs.
+# enter them at program startup.
 GARMIN_EMAIL=my@email.com
 GARMIN_PASSWORD=mypassword
 
-# OPTIONAL: Path to the session directory location. If a session file already
-# exists in this directory (e.g., from a previous run), it will be reused if still
-# valid. If no path is specified, the session will only be stored in memory.
+# OPTIONAL: Path to the session directory location. If provided, the Garmin session will be saved to disk after login.
+# If a session file already exists in this directory (e.g., from a previous run), it will be reused if still valid.
+# If no path is specified, the session will only be stored in memory.
 # Please note that if the session is not persisted and you repeatedly restart the
 # program, you might experience rate limiting issues due to logging in too often.
-SESSION_DIRECTORY_PATH=path/to/session/directory
+DATA_DIRECTORY_PATH=path/to/data/directory
 ```
 
 ## Local Installation 💻
@@ -96,36 +96,27 @@ python ./main.py
 cd docker
 ```
 
-Inspect the configuration in `docker-compose.yml`, especially the `volumes` option, and verify that the assumed host paths match your file structure.
+**4. Option 1: Run the Docker Compose project with restrictive permissions**
 
-**4. Build and run the Docker Compose project**
+`./docker` includes convenient scripts to simplify setting up and running the Docker container (`docker.dev.sh` and `docker.prod.sh` should be used). These scripts handle the creation of a dedicated Docker user, a container data directory on the host, and apply restrictive permissions on the data directory and environment file before running the container. Inspect the configuration in the scripts, and verify that the assumed host paths match your file structure.
+
+Then run the script for your environment, e.g.:
+
+```
+./docker.prod.sh
+```
+
+**4. Option 2: Run the Docker Compose project without restrictive permissions**
+For a less restrictive/simpler setup, you can edit and use the `docker-compose.yml` file. Replace the environment variables for the volume paths with concrete values matching your file structure and remove the `user` property to run the container as root. Then in the Dockerfile, remove the original `ENTRYPOINT` instruction and uncomment the simple `ENTRYPOINT` instruction that does not prevent the container from running as root.
+
+Then run:
 
 ```
 docker-compose up --build
 ```
 
-To prevent the container from running as root, you can set the `UID` environment variable to the id of an unpriviliged user before running the container. The Docker Compose configuration will then run the container as this user instead of the default root user.
-
-**Bash**
-
-Switch to the container user and run:
+or to keep it running in the background:
 
 ```
-export UID && docker-compose up --build
+docker-compose up -d --build && docker-compose logs -f
 ```
-
-**Powershell**
-
-Using WSL, switch to the container user and print the user id:
-
-```
-id -u
-```
-
-Then in Powershell, replacing `<USER_ID>` with this id (e.g. `1000`):
-
-```
-$env:UID=<USER_ID>; docker-compose up --build
-```
-
-NB: Remember this user must have the necessary permissions to access the volumes specified in `docker-compose.yml`.

@@ -33,12 +33,6 @@ class SleepScoreElement:
         value = from_int(obj.get("value"))
         return SleepScoreElement(calendar_date, value)
 
-    # def to_dict(self) -> dict:
-    #     result: dict = {}
-    #     result["calendarDate"] = self.calendar_date.isoformat()
-    #     result["value"] = from_int(self.value)
-    #     return result
-
 
 @dataclass
 class GarminSleepScoreResponse:

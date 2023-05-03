@@ -20,6 +20,7 @@ class ExceptionOccurredEventHandler:
     def __init__(self, discord_service: DiscordApiAdapter):
         self.discord_service = discord_service
 
-    def handle(self, exception: str) -> None:
+    # Send exception to discord
+    def handle(self, exception: Exception, stack_trace: str) -> None:
         logger.info(f"Handling event: Exception occurred")
-        self.discord_service.send_error(exception)
+        self.discord_service.send_exception(exception, stack_trace)
