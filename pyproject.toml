@@ -2,15 +2,44 @@
 name = "garmin-health-discordbot"
 version = "0.1.0"
 description = ""
-authors = ["Your Name <you@example.com>"]
+authors = ["holstt"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
 discord-webhook = "^1.1.0"
 python-dotenv = "^1.0.0"
+garminconnect = "^0.1.55"
+python-dateutil = "^2.8.2"
+apscheduler = "^3.10.1"
+hypothesis = "^6.72.1"
 
+
+[tool.poetry.group.dev.dependencies]
+ipykernel = "^6.22.0"
+black = "^23.3.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+typeCheckingMode = "strict"
+
+# In strict, but don't show these errors
+reportUnusedImport = "none"
+reportUnusedVariable = "none"
+reportUnusedFunction = "none"
+reportUnknownMemberType = "none"
+
+
+# Not in strict, but show these errors
+# reportMissingSuperCall = "error"
+reportCallInDefaultInitializer = "error"
+reportImplicitOverride = "info"
+reportImplicitStringConcatenation = "error"
+reportPropertyTypeMismatch = "error"
+reportShadowedImports = "error"
+reportUninitializedInstanceVariable = "error"
+reportUnnecessaryTypeIgnoreComment = "info"
+
