@@ -3,7 +3,7 @@ import traceback
 from datetime import timedelta
 
 import src.config as config
-import src.dependencies as dependencies
+import src.dependencies as dependency_resolver
 import src.logging_helper as logging_helper
 from src import utils
 from src.config import Config
@@ -16,24 +16,24 @@ def main(app_config: Config) -> None:
     Based on the provided env variables, the main function sets up dependencies and runs the scheduler.
     """
     # Get dependencies
-    deps = dependencies.resolve(app_config)
-    discord_error_handler = deps.error_handler
+    dependencies = dependency_resolver.resolve(app_config)
 
     try:
         # Ensure we can login to garmin
-        garmin_api_client = deps.garmin_api_client
+        garmin_api_client = dependencies.garmin_api_client
         garmin_api_client.login()
 
         # Add job and start scheduler
-        scheduler = deps.scheduler
+        scheduler = dependencies.scheduler
         scheduler.add_garmin_fetch_summary_job(
             app_config.notify_time, job_name="garmin_weekly_summary_job"
         )
         scheduler.run()
     except Exception as e:
-        # Notify discord on exception
-        stack_trace = traceback.format_exc()
-        discord_error_handler.handle(exception=e, stack_trace=stack_trace)
+        # Notify discord on exception error if handler configured
+        if discord_error_handler := dependencies.error_handler:
+            stack_trace = traceback.format_exc()
+            discord_error_handler.handle(exception=e, stack_trace=stack_trace)
         raise e  # Re-raise to exit program
 
 

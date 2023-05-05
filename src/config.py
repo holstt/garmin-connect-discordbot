@@ -26,23 +26,24 @@ class ConfigError(Exception):
 
 
 class Config(NamedTuple):
-    webhook_url: str
+    webhook_url: str  # XXX: Should be type DiscordUrl
     notify_time: time
     email: str
     password: str
     session_file_path: Optional[Path]
     session_data: Optional[dict[str, Any]]
+    webhook_error_url: Optional[str]  # XXX: Should be type DiscordUrl
 
 
 def get_config() -> Config:
     _load_env()
 
     # Get required
-    webhook_url = _get_env_variable_or_fail(
-        "WEBHOOK_URL"
-    )  # XXX: Should be type ValidDiscordUrl
+    webhook_url = _get_env_variable_or_fail("WEBHOOK_URL")
+
     notify_time_of_day_str = _get_env_variable_or_fail("NOTIFY_TIME_OF_DAY")
     time_zone_str = _get_env_variable_or_fail("TIME_ZONE")
+    notify_time = _get_notify_time(notify_time_of_day_str, time_zone_str)
 
     # Get optionals
     session_file_path: Optional[Path] = _get_session_path_if_needed(
@@ -56,8 +57,7 @@ def get_config() -> Config:
     email, password = _get_input_credentials_if_needed(
         email, password, session_file_path
     )
-
-    notify_time = _get_notify_time(notify_time_of_day_str, time_zone_str)
+    webhook_error_url: Optional[str] = os.environ.get("WEBHOOK_ERROR_URL")
 
     return Config(
         webhook_url,
@@ -66,6 +66,7 @@ def get_config() -> Config:
         password,
         session_file_path,
         session_data,
+        webhook_error_url,
     )
 
 

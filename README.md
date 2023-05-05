@@ -41,8 +41,13 @@ The bot is configured using environment variables, which can be specified in a `
 `./env.example` provides an example of the required format. Rename the file to `.env` and edit the values as needed:
 
 ```bash
-# URL for the Discord webhook
+# URL for the Discord webhook that should receive the daily health summary
 WEBHOOK_URL=https://discordapp.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz
+
+# OPTIONAL: Discord webhook URL that should receive an error message in case of any unhandled exceptions (can be same as above)
+# This includes any unhandled exceptions caught by the scheduler
+# If not provided, no error notifications will be sent
+WEBHOOK_ERROR_URL=https://discordapp.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz
 
 # The time in format HH:MM when the daily health summary should be fetched.
 # If data for today is not available yet, the program will schedule a retry at a
@@ -107,6 +112,7 @@ Then run the script for your environment, e.g.:
 ```
 
 **4. Option 2: Run the Docker Compose project without restrictive permissions**
+
 For a less restrictive/simpler setup, you can edit and use the `docker-compose.yml` file. Replace the environment variables for the volume paths with concrete values matching your file structure and remove the `user` property to run the container as root. Then in the Dockerfile, remove the original `ENTRYPOINT` instruction and uncomment the simple `ENTRYPOINT` instruction that does not prevent the container from running as root.
 
 Then run:
