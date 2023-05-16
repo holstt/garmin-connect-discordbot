@@ -34,7 +34,7 @@ Discord bot providing a daily summary of your Garmin Connect health metrics
 
 **1. Clone the repository**:
 
-```
+```bash
 git clone https://github.com/holstt/garmin-health-discordbot.git
 cd garmin-health-discordbot
 ```
@@ -45,7 +45,7 @@ The bot is configured using environment variables, which can be specified in a `
 
 `./env.example` provides an example of the required format. Rename the file to `.env` and edit the values as needed:
 
-```bash
+```properties
 # URL for the Discord webhook
 WEBHOOK_URL=https://discordapp.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz
 
@@ -75,19 +75,19 @@ DATA_DIRECTORY_PATH=path/to/data/directory
 
 **3. Install the dependencies and create a virtual environment**
 
-```
+```bash
 poetry install
 ```
 
 **4. Activate the virtual environment**
 
-```
+```bash
 poetry shell
 ```
 
 **5. Run the bot**
 
-```
+```bash
 python ./main.py
 ```
 
@@ -97,7 +97,7 @@ python ./main.py
 
 **3. From project root, navigate to the `./docker` folder**
 
-```
+```bash
 cd docker
 ```
 
@@ -107,7 +107,7 @@ cd docker
 
 Then run the script for your environment, e.g.:
 
-```
+```bash
 ./docker.prod.sh
 ```
 
@@ -116,12 +116,12 @@ For a less restrictive/simpler setup, you can edit and use the `docker-compose.y
 
 Then run:
 
-```
+```bash
 docker-compose up --build
 ```
 
 or to keep it running in the background:
 
-```
+```bash
 docker-compose up -d --build && docker-compose logs -f
 ```
