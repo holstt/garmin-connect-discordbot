@@ -11,19 +11,24 @@ Discord bot providing a daily summary of your Garmin Connect health metrics
 - Spot trends: Compares the most recent metric value to its weekly average
 - Docker support: Easy deployment using Docker Compose including scripts for a more secure setup in production environments
 
-**TODO:**
 
-- Add more metrics
-- Customize which metrics to include in the daily update
-- End of week summary with activity overview, weekly distance, frequency for each activity etc.
-- Generate chart and include as image in the daily/weekly update to visualize progress
+#### Todo:
+- [ ] Add more metrics
+  - [ ] Heart rate
+  - [ ] Body battery
+  - [ ] Steps
+  - [ ] Stress Score
+- [ ] Customize which metrics to include in the daily update
+- [ ] End of week summary with activity overview, weekly distance, frequency for each activity etc.
+- [ ] Generate chart and include as image in the daily/weekly update to visualize progress
 
 ## Requirements
 
 - A [Garmin Connect](https://connect.garmin.com/) account and a Garmin device to collect the data
 - A [Discord webhook URL](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) (interaction with the bot is not relevant with current feature set, so we don't need to create a bot account)
-- The Poetry package manager, see [installation instructions](https://python-poetry.org/docs/#installation)
-- (Only if running with Docker) [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+- (Only if running locally) The [Poetry package manager](https://python-poetry.org/docs/#installation)
+- (Only if running with Docker) [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) 
+
 
 ## Getting Started
 
@@ -98,7 +103,7 @@ cd docker
 
 **4. Option 1: Run the Docker Compose project with restrictive permissions**
 
-`./docker` includes convenient scripts to simplify setting up and running the Docker container (`docker.dev.sh` and `docker.prod.sh` should be used). These scripts handle the creation of a dedicated Docker user, a container data directory on the host, and apply restrictive permissions on the data directory and environment file before running the container. Inspect the configuration in the scripts, and verify that the assumed host paths match your file structure.
+`./docker` includes convenient scripts to simplify setting up and running the Docker container with `docker.dev.sh` and `docker.prod.sh` being the entrypoints. These scripts handle the creation of a dedicated Docker user, a container data directory on the host, and apply restrictive permissions on the data directory and environment file before running the container. Inspect the configuration in the scripts, and verify that the assumed host paths match your file structure.
 
 Then run the script for your environment, e.g.:
 
@@ -107,7 +112,7 @@ Then run the script for your environment, e.g.:
 ```
 
 **4. Option 2: Run the Docker Compose project without restrictive permissions**
-For a less restrictive/simpler setup, you can edit and use the `docker-compose.yml` file. Replace the environment variables for the volume paths with concrete values matching your file structure and remove the `user` property to run the container as root. Then in the Dockerfile, remove the original `ENTRYPOINT` instruction and uncomment the simple `ENTRYPOINT` instruction that does not prevent the container from running as root.
+For a less restrictive/simpler setup, you can edit and use the `docker-compose.yml` file directly. Replace the environment variables for the volume paths with concrete values matching your file structure and remove the `user` property to run the container as root. Then in the Dockerfile, remove the original `ENTRYPOINT` instruction and uncomment the simple `ENTRYPOINT` instruction that does not prevent the container from running as root.
 
 Then run:
 
