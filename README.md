@@ -1,4 +1,4 @@
-# garmin-health-discordbot
+# garmin-connect-discordbot
 
 Discord bot providing a daily summary of your Garmin Connect health metrics
 
