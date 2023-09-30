@@ -31,9 +31,7 @@ class Dependencies(NamedTuple):
 def resolve(app_config: Config) -> Dependencies:
     time_provider = TimeProvider()
 
-    garmin_base_client = Garmin(
-        app_config.email, app_config.password, session_data=app_config.session_data
-    )
+    garmin_base_client = Garmin(app_config.email, app_config.password)
 
     garmin_client = GarminApiClient(
         garmin_base_client, time_provider, app_config.session_file_path
