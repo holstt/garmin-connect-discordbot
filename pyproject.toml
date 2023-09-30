@@ -13,6 +13,7 @@ garminconnect = "^0.2.7"
 python-dateutil = "^2.8.2"
 apscheduler = "^3.10.1"
 hypothesis = "^6.72.1"
+pydantic = "^2.4.2"
 
 
 [tool.poetry.group.dev.dependencies]

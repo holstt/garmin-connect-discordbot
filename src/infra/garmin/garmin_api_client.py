@@ -31,6 +31,9 @@ class GarminEndpoint(Enum):
         "/wellness-service/stats/daily/sleep/score/{start_date}/{end_date}"
     )
     DAILY_HRV = "daily/{start_date}/{end_date}"
+    DAILY_RHR = "/usersummary-service/stats/heartRate/daily/{start_date}/{end_date}"
+    DAILY_STEPS = "/usersummary-service/stats/steps/daily/{start_date}/{end_date}"
+    DAILY_STRESS = "/usersummary-service/stats/stress/daily/{start_date}/{end_date}"
 
 
 # Wraps the base client from garminconnect ext. library. We need to modify the endpoint urls in order to get a range of data instead of just one day
@@ -58,7 +61,6 @@ class GarminApiClient:
             )
 
     # Authenticate with garmin.
-    # May be called initially by external callers to confirm that client is able to login.
     # Client will relogin automatically when needed (if session has expired). XXX: Not sure new version of garminconnect library does this.
     def login(self):
         # Log in and save the session to disk XXX: Make a base class that handles this?
