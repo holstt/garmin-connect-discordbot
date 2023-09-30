@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from garminconnect import Garmin  # type: ignore
 
@@ -24,16 +24,14 @@ class Dependencies(NamedTuple):
     discord_client: DiscordApiClient
     discord_adapter: DiscordApiAdapter
     summary_ready_handler: HealthSummaryReadyEventHandler
-    error_handler: ExceptionOccurredEventHandler
     scheduler: GarminFetchDataScheduler
+    error_handler: Optional[ExceptionOccurredEventHandler]
 
 
 def resolve(app_config: Config) -> Dependencies:
     time_provider = TimeProvider()
 
-    garmin_base_client = Garmin(
-        app_config.email, app_config.password, session_data=app_config.session_data
-    )
+    garmin_base_client = Garmin(app_config.email, app_config.password)
 
     garmin_client = GarminApiClient(
         garmin_base_client, time_provider, app_config.session_file_path
@@ -44,18 +42,28 @@ def resolve(app_config: Config) -> Dependencies:
     discord_client = DiscordApiClient(
         app_config.webhook_url, time_provider, service_name="garmin-health-bot"
     )
+
     discord_api_adapter = DiscordApiAdapter(discord_client)
 
     summary_ready_handler = HealthSummaryReadyEventHandler(discord_api_adapter)
-    error_handler = ExceptionOccurredEventHandler(discord_api_adapter)
+
+    # Create error handler if needed
+    error_handler = None
+    if app_config.webhook_error_url:
+        discord_error_client = DiscordApiClient(
+            app_config.webhook_error_url,
+            time_provider,
+            service_name="garmin-health-bot",
+        )
+        discord_error_adapter = DiscordApiAdapter(discord_error_client)
+        error_handler = ExceptionOccurredEventHandler(discord_error_adapter)
 
     scheduler = GarminFetchDataScheduler(
         garmin_service,
         time_provider,
         summary_ready_event=summary_ready_handler.handle,
-        exception_event=error_handler.handle,
+        exception_event=error_handler.handle if error_handler else None,
     )
-
     return Dependencies(
         time_provider,
         garmin_client,
@@ -64,6 +72,6 @@ def resolve(app_config: Config) -> Dependencies:
         discord_client,
         discord_api_adapter,
         summary_ready_handler,
-        error_handler,
         scheduler,
+        error_handler,
     )

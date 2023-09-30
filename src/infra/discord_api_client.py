@@ -1,4 +1,5 @@
 import logging
+from typing import Optional
 
 from discord_webhook import DiscordEmbed, DiscordWebhook
 
@@ -27,6 +28,7 @@ class DiscordApiClient:
             username=service_name,
             avatar_url="https://is2-ssl.mzstatic.com/image/thumb/Purple116/v4/66/ee/6a/66ee6ac7-8c44-0f33-757e-1024b3a7489c/AppIcon-0-1x_U007emarketing-0-6-0-sRGB-85-220.png/256x256bb.jpg",
         )
+
         self._time_provider = time_provider
 
     # Generic method for sending an embedded message to Discord

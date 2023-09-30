@@ -48,20 +48,22 @@ WORKING_DIR_NAME=$(basename "$PWD")
 
 # --no-p, do not keep permissions
 # -m is --prune-empty-dirs and is somehow important for rsync to exclude the correct files
-RSYNC_COMMAND="-vam --no-p --progress "${source_files[@]}" "${exclude_pattern[@]}" . $DEST"
+RSYNC_COMMAND="-vam --no-p --progress ${source_files[*]} ${exclude_pattern[*]} . $DEST"
 
 # This if statement prevents uploading the wrong folder :)
 if [ "$WORKING_DIR_NAME" == "$PROJECT_DIR_NAME" ]; then
   # Run a dry run first
   echo "Running dry run... The following files will be transferred:"
-  rsync --dry-run "$RSYNC_COMMAND"
+  # shellcheck disable=SC2086 # Ignore shellcheck warning. We want to expand to multiple arguments
+  rsync --dry-run $RSYNC_COMMAND
 
   # Let user confirm
   echo "Press Enter to confirm file sync to $DEST, or Ctrl + C to cancel..."
   read
 
   # Copy files to server
-  rsync "$RSYNC_COMMAND"
+  # shellcheck disable=SC2086 # Ignore shellcheck warning. We want to expand to multiple arguments
+  rsync $RSYNC_COMMAND
   echo "Sync complete"
 else
   echo "Error: Expected name of working directory to be '$PROJECT_DIR_NAME', but name of working directory is '$WORKING_DIR_NAME'. No files have been transferred. Please ensure you are in the correct directory and try again."

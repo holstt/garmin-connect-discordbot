@@ -30,7 +30,7 @@ class GarminFetchDataScheduler:
         garmin_service: GarminService,
         time_provider: TimeProvider,
         summary_ready_event: Callable[[HealthSummary], None],
-        exception_event: Callable[[Exception, str], None],
+        exception_event: Optional[Callable[[Exception, str], None]],
     ):
         self._garmin_service = garmin_service
         self._time_provider = time_provider
@@ -135,7 +135,7 @@ class GarminFetchDataScheduler:
         self._summary_ready_event(healthSummary)
 
     def _on_exception(self, event: JobExecutionEvent) -> None:
-        if event.exception:
+        if event.exception and self.exception_event:
             # Raise exception event
             self.exception_event(event.exception, event.traceback)  # type: ignore
 
