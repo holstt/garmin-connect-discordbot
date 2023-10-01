@@ -1,9 +1,7 @@
-import json
 import logging
 from datetime import date
 
-from pydantic import TypeAdapter
-
+from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
 from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
 from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse
 from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
@@ -56,3 +54,7 @@ class GarminApiAdapter:
     def get_daily_hrv(self, start_date: date, end_date: date) -> GarminHrvResponse:
         json = self._api_client.get_data(GarminEndpoint.DAILY_HRV, start_date, end_date)
         return GarminHrvResponse.from_dict(json)
+
+    def get_daily_bb(self, start_date: date, end_date: date) -> GarminBbResponse:
+        json = self._api_client.get_data(GarminEndpoint.DAILY_BB, start_date, end_date)
+        return GarminBbResponse.from_dict(json)

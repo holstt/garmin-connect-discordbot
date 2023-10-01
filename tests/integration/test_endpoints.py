@@ -1,4 +1,5 @@
 # Integration/dev testing for the endpoints
+# Testcase: Request actual data from garmin and convert to DTOs
 
 import logging
 from datetime import timedelta
@@ -30,9 +31,12 @@ garmin_client.login()
 end_date = time_provider.now().date()
 start_date = end_date - timedelta(days=6)
 
-rhr = adapter.get_daily_rhr(start_date, end_date)
-steps = adapter.get_daily_steps(start_date, end_date)
-stress = adapter.get_daily_stress(start_date, end_date)
-hrv = adapter.get_daily_hrv(start_date, end_date)
+# rhr = adapter.get_daily_rhr(start_date, end_date)
+# steps = adapter.get_daily_steps(start_date, end_date)
+# stress = adapter.get_daily_stress(start_date, end_date)
+# sleep = adapter.get_daily_sleep(start_date, end_date)
+# sleep_score = adapter.get_daily_sleep_score(start_date, end_date)
+# hrv = adapter.get_daily_hrv(start_date, end_date)
+bb = adapter.get_daily_bb(start_date, end_date)
 
 print("Done")
