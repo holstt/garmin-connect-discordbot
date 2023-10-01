@@ -11,7 +11,7 @@ from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreRe
 
 class SleepScoreMetrics:
     def __init__(self, sleep_data: GarminSleepScoreResponse):
-        self._entries = sorted(sleep_data.entries, key=lambda x: x.calendar_date)
+        self._entries = sorted(sleep_data.entries, key=lambda x: x.calendarDate)
 
     @property
     # Get the most recent entry
@@ -36,12 +36,12 @@ class SleepScoreMetrics:
 class SleepMetrics:  # XXX: // SleepSummary
     def __init__(self, sleep_data: GarminSleepResponse):
         # Ensure sorted by date such that the most recent entry is last
-        self._entries = sorted(sleep_data.entries, key=lambda x: x.calendar_date)
+        self._entries = sorted(sleep_data.entries, key=lambda x: x.calendarDate)
 
     @property
     # Returns average sleep time for the sleep data period
     def avg(self) -> timedelta:
-        total_sleep_seconds = sum([x.values.total_sleep_seconds for x in self._entries])
+        total_sleep_seconds = sum([x.values.totalSleepSeconds for x in self._entries])
         average_sleep_seconds = total_sleep_seconds / len(self._entries)
         average_sleep = timedelta(seconds=average_sleep_seconds)
         return average_sleep
@@ -49,7 +49,7 @@ class SleepMetrics:  # XXX: // SleepSummary
     @property
     # Get the most recent sleep entry
     def current(self) -> timedelta:
-        return timedelta(seconds=self._entries[-1].values.total_sleep_seconds)
+        return timedelta(seconds=self._entries[-1].values.totalSleepSeconds)
 
     @property
     def diff_to_average(self) -> timedelta:
@@ -61,17 +61,17 @@ class SleepMetrics:  # XXX: // SleepSummary
 
 class HrvMetrics:
     def __init__(self, hrv_data: GarminHrvResponse) -> None:
-        self._entries = sorted(hrv_data.entries, key=lambda x: x.calendar_date)
+        self._entries = sorted(hrv_data.entries, key=lambda x: x.calendarDate)
 
     @property
     # Returns none if no hrv registered for the night
     def current(self) -> int | None:
-        return self._entries[-1].last_night_avg
+        return self._entries[-1].lastNightAvg
 
     @property
     # Get the most recent registered weekly hrv average
     def weekly_avg(self) -> int:
-        return self._entries[-1].weekly_avg
+        return self._entries[-1].weeklyAvg
 
     @property
     # Returns none if no hrv registered for the night

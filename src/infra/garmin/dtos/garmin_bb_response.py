@@ -27,8 +27,8 @@ class BbEntry(BaseModel):
 class GarminBbResponse:
     entries: list[BbEntry]
 
-    @classmethod
-    def from_dict(cls, json_dict: dict[str, Any]) -> "GarminBbResponse":
+    @staticmethod
+    def from_json(json: Any) -> "GarminBbResponse":
         adapter = TypeAdapter(list[BbEntry])
-        entries = adapter.validate_python(json_dict)
-        return cls(entries)
+        entries = adapter.validate_python(json)
+        return GarminBbResponse(entries)

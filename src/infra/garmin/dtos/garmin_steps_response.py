@@ -15,8 +15,8 @@ class StepsEntry(BaseModel):
 class GarminStepsResponse:
     entries: list[StepsEntry]
 
-    @classmethod
-    def from_dict(cls, json_dict: dict[str, Any]) -> "GarminStepsResponse":
+    @staticmethod
+    def from_json(json_dict: dict[str, Any]) -> "GarminStepsResponse":
         adapter = TypeAdapter(list[StepsEntry])
         entries = adapter.validate_python(json_dict)
-        return cls(entries)
+        return GarminStepsResponse(entries)

@@ -80,9 +80,10 @@ class GarminApiClient:
 
     def get_data(
         self, endpoint: GarminEndpoint, start_date: date, end_date: date
-    ) -> dict[str, Any]:
+    ) -> Any:
         """
         Fetch data from the specified endpoint between start_date and end_date.
+        return: Json
         """
 
         self.reinit_client_if_needed()
@@ -110,10 +111,10 @@ class GarminApiClient:
             self._client_age = self._time_provider.now()
             self.login()
 
-    def _get(self, endpoint_url: str) -> dict[str, Any]:
+    def _get(self, endpoint_url: str) -> Any:
         try:
             # Use base client's internal http client directly to get better data for urls not in library
-            response_json: dict[str, Any] = self._base_client.connectapi(endpoint_url)  # type: ignore
+            response_json = self._base_client.connectapi(endpoint_url)  # type: ignore
 
         except requests.exceptions.JSONDecodeError as e:
             raise GarminApiClientError(
@@ -123,7 +124,7 @@ class GarminApiClient:
         return response_json  # type: ignore
 
     # General executor, that catches any exceptions thrown by the request function and retries request after re-login
-    def _execute_request(self, request_func: Callable[[], dict[str, Any]]):
+    def _execute_request(self, request_func: Callable[[], Any]):
         try:
             # Execute request (using current session)
             # If it fails, the session may be invalid or expired

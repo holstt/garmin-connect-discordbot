@@ -22,8 +22,8 @@ class StressEntry(BaseModel):
 class GarminStressRespone:
     entries: list[StressEntry]
 
-    @classmethod
-    def from_dict(cls, json_dict: dict[str, Any]) -> "GarminStressRespone":
+    @staticmethod
+    def from_json(json_dict: dict[str, Any]) -> "GarminStressRespone":
         adapter = TypeAdapter(list[StressEntry])
         entries = adapter.validate_python(json_dict)
-        return cls(entries)
+        return GarminStressRespone(entries)

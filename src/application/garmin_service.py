@@ -78,7 +78,7 @@ class GarminService:
         get_fn: Callable[[date, date], T],
     ) -> Optional[T]:
         data: Optional[T] = get_fn(period_start, period_end)
-        if period_end not in [x.calendar_date.date() for x in data.entries]:
+        if period_end not in [x.calendarDate for x in data.entries]:
             logger.info(
                 f"Did not find {get_fn.__name__} data for specified end date: {period_end.isoformat()}"
             )

@@ -19,29 +19,27 @@ class GarminApiAdapter:
         self._api_client = api_client
 
     def get_daily_rhr(self, start_date: date, end_date: date) -> GarminRhrResponse:
-        json_dict = self._api_client.get_data(
-            GarminEndpoint.DAILY_RHR, start_date, end_date
-        )
+        json = self._api_client.get_data(GarminEndpoint.DAILY_RHR, start_date, end_date)
 
-        return GarminRhrResponse.from_dict(json_dict)
+        return GarminRhrResponse.from_json(json)
 
     def get_daily_steps(self, start_date: date, end_date: date) -> GarminStepsResponse:
         json = self._api_client.get_data(
             GarminEndpoint.DAILY_STEPS, start_date, end_date
         )
-        return GarminStepsResponse.from_dict(json)
+        return GarminStepsResponse.from_json(json)
 
     def get_daily_stress(self, start_date: date, end_date: date) -> GarminStressRespone:
         json = self._api_client.get_data(
             GarminEndpoint.DAILY_STRESS, start_date, end_date
         )
-        return GarminStressRespone.from_dict(json)
+        return GarminStressRespone.from_json(json)
 
     def get_daily_sleep(self, start_date: date, end_date: date) -> GarminSleepResponse:
         json = self._api_client.get_data(
             GarminEndpoint.DAILY_SLEEP, start_date, end_date
         )
-        return GarminSleepResponse.from_list(json)
+        return GarminSleepResponse.from_json(json)
 
     def get_daily_sleep_score(
         self, start_date: date, end_date: date
@@ -49,12 +47,12 @@ class GarminApiAdapter:
         json = self._api_client.get_data(
             GarminEndpoint.DAILY_SLEEP_SCORE, start_date, end_date
         )
-        return GarminSleepScoreResponse.from_list(json)
+        return GarminSleepScoreResponse.from_json(json)
 
     def get_daily_hrv(self, start_date: date, end_date: date) -> GarminHrvResponse:
         json = self._api_client.get_data(GarminEndpoint.DAILY_HRV, start_date, end_date)
-        return GarminHrvResponse.from_dict(json)
+        return GarminHrvResponse.from_json(json)
 
     def get_daily_bb(self, start_date: date, end_date: date) -> GarminBbResponse:
         json = self._api_client.get_data(GarminEndpoint.DAILY_BB, start_date, end_date)
-        return GarminBbResponse.from_dict(json)
+        return GarminBbResponse.from_json(json)

@@ -1,6 +1,5 @@
-import json
 from dataclasses import dataclass
-from typing import Any, TypeVar
+from typing import Any
 
 from pydantic import BaseModel, TypeAdapter
 
@@ -20,8 +19,8 @@ class RhrEntry(BaseModel):
 class GarminRhrResponse:
     entries: list[RhrEntry]
 
-    @classmethod
-    def from_dict(cls, json_dict: dict[str, Any]) -> "GarminRhrResponse":
+    @staticmethod
+    def from_json(json: Any) -> "GarminRhrResponse":
         adapter = TypeAdapter(list[RhrEntry])
-        entries = adapter.validate_python(json_dict)
-        return cls(entries)
+        entries = adapter.validate_python(json)
+        return GarminRhrResponse(entries)
