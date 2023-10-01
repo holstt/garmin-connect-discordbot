@@ -1,17 +1,13 @@
-import json
 import logging
-import os
 from datetime import date, timedelta
-from enum import Enum
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-import garth
 import requests  # type: ignore
-from garminconnect import Garmin, GarminConnectAuthenticationError  # type: ignore
+from garminconnect import Garmin  # type: ignore
 from garth.exc import GarthHTTPError
 
-import src.utils as utils
+from src.infra.garmin.endpoints import GarminEndpoint
 from src.infra.time_provider import TimeProvider  # type: ignore
 
 # XXX: Consider handling these errors from garminconnect lib: GarminConnectConnectionError,; GarminConnectTooManyRequestsError,
@@ -22,18 +18,6 @@ logger = logging.getLogger(__name__)
 
 class GarminApiClientError(Exception):
     pass
-
-
-# 'garminconnect' library only supports fetching data for a single day, so we define date range endpoints and use garminconnect's internal client directly to fetch.
-class GarminEndpoint(Enum):
-    DAILY_SLEEP = "/wellness-service/stats/sleep/daily/{start_date}/{end_date}"
-    DAILY_SLEEP_SCORE = (
-        "/wellness-service/stats/daily/sleep/score/{start_date}/{end_date}"
-    )
-    DAILY_HRV = "daily/{start_date}/{end_date}"
-    DAILY_RHR = "/usersummary-service/stats/heartRate/daily/{start_date}/{end_date}"
-    DAILY_STEPS = "/usersummary-service/stats/steps/daily/{start_date}/{end_date}"
-    DAILY_STRESS = "/usersummary-service/stats/stress/daily/{start_date}/{end_date}"
 
 
 # Wraps the base client from garminconnect ext. library. We need to modify the endpoint urls in order to get a range of data instead of just one day
@@ -60,6 +44,7 @@ class GarminApiClient:
                 "No session file path provided. Session will only be kept in memory."
             )
 
+    # TODO: Move responsibility for auth
     # Authenticate with garmin.
     # Client will relogin automatically when needed (if session has expired). XXX: Not sure new version of garminconnect library does this.
     def login(self):
@@ -101,18 +86,8 @@ class GarminApiClient:
         """
 
         self.reinit_client_if_needed()
-
-        endpoint_template = endpoint.value
-        endpoint_str = self._format_endpoint(endpoint_template, start_date, end_date)
-
-        # Special case for hrv # XXX: Or can we use the same url?
-        # XXX: Not using same pattern as get_data() atm
-        if endpoint == GarminEndpoint.DAILY_HRV:
-            # Note: cdate argument is not validated by garminconnect library but just concatenated to base url, so we pass our own custom string for better data
-            request_func = lambda: self._base_client.get_hrv_data(cdate=endpoint_str)
-        else:
-            request_func = lambda: self._get(endpoint_str)
-
+        endpoint_str = endpoint.format(start_date, end_date)
+        request_func = lambda: self._get(endpoint_str)
         response_json = self._execute_request(request_func)
         return response_json
 
@@ -134,15 +109,6 @@ class GarminApiClient:
             )
             self._client_age = self._time_provider.now()
             self.login()
-
-    # Injects start and end date into given endpoint url template
-    def _format_endpoint(
-        self, endpoint_template: str, start_date: date, end_date: date
-    ) -> str:
-        return endpoint_template.format(
-            start_date=utils.to_YYYYMMDD(start_date),
-            end_date=utils.to_YYYYMMDD(end_date),
-        )
 
     def _get(self, endpoint_url: str) -> dict[str, Any]:
         try:

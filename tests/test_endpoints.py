@@ -30,8 +30,9 @@ garmin_client.login()
 end_date = time_provider.now().date()
 start_date = end_date - timedelta(days=6)
 
-result = adapter.get_daily_rhr(start_date, end_date)
-result = adapter.get_daily_steps(start_date, end_date)
-result = adapter.get_daily_stress(start_date, end_date)
+rhr = adapter.get_daily_rhr(start_date, end_date)
+steps = adapter.get_daily_steps(start_date, end_date)
+stress = adapter.get_daily_stress(start_date, end_date)
+hrv = adapter.get_daily_hrv(start_date, end_date)
 
 print("Done")

@@ -1,15 +1,16 @@
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, TypeAdapter
 
 
+# If no duration in stress segment, value will be none
 class StressValues(BaseModel):
-    highStressDuration: int
-    lowStressDuration: int
+    highStressDuration: Optional[int]
+    lowStressDuration: Optional[int]
     overallStressLevel: int
-    restStressDuration: int
-    mediumStressDuration: int
+    restStressDuration: Optional[int]
+    mediumStressDuration: Optional[int]
 
 
 class StressEntry(BaseModel):
