@@ -31,9 +31,6 @@ garmin_client.login()
 
 period = DatePeriod.from_last_7_days(time_provider.now().date())
 
-end_date = time_provider.now().date()
-start_date = end_date - timedelta(days=6)
-
 # rhr = adapter.get_daily_rhr(period)
 # steps = adapter.get_daily_steps(period)
 # stress = adapter.get_daily_stress(period)
