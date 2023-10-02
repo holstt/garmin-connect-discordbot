@@ -7,7 +7,8 @@ import requests  # type: ignore
 from garminconnect import Garmin  # type: ignore
 from garth.exc import GarthHTTPError
 
-from src.infra.garmin.endpoints import GarminEndpoint
+from src.domain.models import DatePeriod
+from src.infra.garmin.garmin_endpoints import GarminEndpoint
 from src.infra.time_provider import TimeProvider  # type: ignore
 
 # XXX: Consider handling these errors from garminconnect lib: GarminConnectConnectionError,; GarminConnectTooManyRequestsError,
@@ -78,16 +79,14 @@ class GarminApiClient:
             logger.info(f"Saving current session to '{self._session_dir}'")
             self._base_client.garth.dump(str(self._session_dir))
 
-    def get_data(
-        self, endpoint: GarminEndpoint, start_date: date, end_date: date
-    ) -> Any:
+    def get_data(self, endpoint: GarminEndpoint, period: DatePeriod) -> Any:
         """
         Fetch data from the specified endpoint between start_date and end_date.
         return: Json
         """
 
-        self.reinit_client_if_needed()
-        endpoint_str = endpoint.format(start_date, end_date)
+        self._reinit_client_if_needed()
+        endpoint_str = endpoint.format(period.start, period.end)
         request_func = lambda: self._get(endpoint_str)
         response_json = self._execute_request(request_func)
         return response_json
@@ -95,7 +94,7 @@ class GarminApiClient:
     # XXX: When running on remote server, Garmin base client stops working after a while. (seems not to be a session issue)
     # XXX: This is a workaround for now. Should be investigated further.
     # NB: Not used after migrating to garminconnect 0.2.7 to see if it fixes the issue.
-    def reinit_client_if_needed(self):
+    def _reinit_client_if_needed(self):
         return
         max_client_age = timedelta(minutes=1)
         # Reinit if more than max_client_age has passed since last init

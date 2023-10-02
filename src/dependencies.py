@@ -5,8 +5,8 @@ from garminconnect import Garmin  # type: ignore
 from src.application.garmin_service import GarminService
 from src.application.scheduler_service import GarminFetchDataScheduler
 from src.config import Config
-from src.infra.discord_api_adapter import DiscordApiAdapter
-from src.infra.discord_api_client import DiscordApiClient
+from src.infra.discord.discord_api_adapter import DiscordApiAdapter
+from src.infra.discord.discord_api_client import DiscordApiClient
 from src.infra.garmin.garmin_api_adapter import GarminApiAdapter
 from src.infra.garmin.garmin_api_client import GarminApiClient
 from src.infra.time_provider import TimeProvider

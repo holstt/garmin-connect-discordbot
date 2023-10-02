@@ -8,6 +8,7 @@ from garminconnect import Garmin  # type: ignore
 
 from src import config, logging_helper
 from src.application.garmin_service import GarminService
+from src.domain.models import DatePeriod
 from src.infra.garmin.garmin_api_adapter import GarminApiAdapter
 from src.infra.garmin.garmin_api_client import GarminApiClient
 from src.infra.time_provider import TimeProvider
@@ -28,15 +29,17 @@ service = GarminService(adapter)
 
 garmin_client.login()
 
+period = DatePeriod.from_last_7_days(time_provider.now().date())
+
 end_date = time_provider.now().date()
 start_date = end_date - timedelta(days=6)
 
-# rhr = adapter.get_daily_rhr(start_date, end_date)
-# steps = adapter.get_daily_steps(start_date, end_date)
-# stress = adapter.get_daily_stress(start_date, end_date)
-# sleep = adapter.get_daily_sleep(start_date, end_date)
-sleep_score = adapter.get_daily_sleep_score(start_date, end_date)
-# hrv = adapter.get_daily_hrv(start_date, end_date)
-# bb = adapter.get_daily_bb(start_date, end_date)
+# rhr = adapter.get_daily_rhr(period)
+# steps = adapter.get_daily_steps(period)
+# stress = adapter.get_daily_stress(period)
+# sleep = adapter.get_daily_sleep(period)
+sleep_score = adapter.get_daily_sleep_score(period)
+# hrv = adapter.get_daily_hrv(period)
+# bb = adapter.get_daily_bb(period)
 
 print("Done")

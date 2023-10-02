@@ -1,7 +1,7 @@
 import logging
 
 from src.domain.models import HealthSummary
-from src.infra.discord_api_adapter import DiscordApiAdapter
+from src.infra.discord.discord_api_adapter import DiscordApiAdapter
 
 logger = logging.getLogger(__name__)
 
