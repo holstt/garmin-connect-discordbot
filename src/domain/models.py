@@ -10,6 +10,7 @@ from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
 from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse
 from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
 from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
+from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
 
 T = TypeVar("T")
 
@@ -91,6 +92,12 @@ class BodyBatteryMetrics(SimpleMetric):
         )
 
 
+class StressMetrics(SimpleMetric):
+    def __init__(self, stress_data: GarminStressResponse):
+        entries = sorted(stress_data.entries, key=lambda x: x.calendarDate)
+        super().__init__(entries, lambda x: x.values.overallStressLevel)
+
+
 class SleepScoreMetrics(SimpleMetric):
     def __init__(self, sleep_data: GarminSleepScoreResponse):
         entries = sorted(sleep_data.entries, key=lambda x: x.calendarDate)
@@ -160,3 +167,4 @@ class HealthSummary:
     sleep_score: SleepScoreMetrics
     rhr: RhrMetrics
     bb: BodyBatteryMetrics
+    stress: StressMetrics

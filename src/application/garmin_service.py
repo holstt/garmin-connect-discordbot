@@ -21,6 +21,7 @@ T = TypeVar(
         dtos.GarminSleepScoreResponse,
         dtos.GarminRhrResponse,
         dtos.GarminBbResponse,
+        dtos.GarminStressResponse,
     ],
 )
 
@@ -82,6 +83,12 @@ class GarminService:
         if not dto_bb:
             return None
 
+        dto_stress = self._get_and_ensure_includes_period_end(
+            period, self._client.get_daily_stress
+        )
+        if not dto_stress:
+            return None
+
         # Create health summary
         health_summary = models.HealthSummary(
             date=period.end,
@@ -90,6 +97,7 @@ class GarminService:
             sleep_score=models.SleepScoreMetrics(sleep_data=dto_sleep_score),
             rhr=models.RhrMetrics(rhr_data=dto_rhr),
             bb=models.BodyBatteryMetrics(bb_data=dto_bb),
+            stress=models.StressMetrics(stress_data=dto_stress),
         )
 
         return health_summary

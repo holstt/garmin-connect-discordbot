@@ -12,6 +12,7 @@ from src.domain.models import (
     RhrMetrics,
     SleepMetrics,
     SleepScoreMetrics,
+    StressMetrics,
 )
 from src.infra.time_provider import TimeProvider
 
@@ -50,6 +51,7 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
         msg += self._create_rhr(health_summary.rhr)
         msg += self._create_hrv(health_summary.hrv)
         msg += self._create_bb(health_summary.bb)
+        msg += self._create_stress(health_summary.stress)
 
         super().__init__(
             title=title,
@@ -59,13 +61,20 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
 
     # XXX: Consider generic method for creating metrics messages
 
+    def _create_stress(self, stress_metrics: StressMetrics) -> str:
+        stress_recent_str = stress_metrics.current
+        week_avg_str = round(stress_metrics.avg)
+        diff_to_avg_str = _value_to_signed_str(round(stress_metrics.diff_to_average))
+
+        return f"```🤯 Stress Level: {stress_recent_str}/100 (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
+
 
     def _create_bb(self, bb_metrics: BodyBatteryMetrics) -> str:
         bb_recent_str = bb_metrics.current
         week_avg_str = round(bb_metrics.avg)
         diff_to_avg_str = _value_to_signed_str(round(bb_metrics.diff_to_average))
 
-        return f"```⚡ Body Battery: {bb_recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
+        return f"```⚡ Body Battery: {bb_recent_str}/100 (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
 
 
@@ -92,7 +101,7 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
         week_avg_str = round(metrics.avg)
         diff_to_avg_str = _value_to_signed_str(round(metrics.diff_to_average))
 
-        return f"```😴 Sleep Score: {recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
+        return f"```😴 Sleep Score: {recent_str}/100 (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
     def _create_sleep(self, sleep_metrics: SleepMetrics) -> str:
         sleep_recent_str = _format_timedelta(sleep_metrics.current)
