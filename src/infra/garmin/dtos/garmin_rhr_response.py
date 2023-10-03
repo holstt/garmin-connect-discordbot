@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
 from pydantic import BaseModel, TypeAdapter
@@ -11,7 +12,7 @@ class RhrValues(BaseModel):
 
 
 class RhrEntry(BaseModel):
-    calendarDate: str
+    calendarDate: date
     values: RhrValues
 
 

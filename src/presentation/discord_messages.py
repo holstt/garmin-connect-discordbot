@@ -5,11 +5,16 @@ from datetime import datetime, timedelta
 
 from discord_webhook import DiscordEmbed, DiscordWebhook
 
-from src.domain.models import HealthSummary, HrvMetrics, SleepMetrics, SleepScoreMetrics
+from src.domain.models import (
+    HealthSummary,
+    HrvMetrics,
+    RhrMetrics,
+    SleepMetrics,
+    SleepScoreMetrics,
+)
 from src.infra.time_provider import TimeProvider
 
 logger = logging.getLogger(__name__)
-
 
 
 # Send message with error
@@ -22,7 +27,6 @@ class DiscordErrorMessage(DiscordEmbed):
         )
 
 
-
 # Send message with exception stack trace
 class DiscordExceptionMessage(DiscordEmbed):
     def __init__(self, exception: Exception, stack_trace: str):
@@ -32,15 +36,17 @@ class DiscordExceptionMessage(DiscordEmbed):
             color=0xFF0000,
         )
 
+
 # Health summary discord dto/message
 class DiscordHealthSummaryMessage(DiscordEmbed):
     def __init__(self, health_summary: HealthSummary):
-
         title = f"Garmin Health Metrics, {health_summary.date.strftime('%d-%m-%Y')}"
         msg = ""
 
+
         msg += self._create_sleep(health_summary.sleep)
         msg += self._create_sleep_score(health_summary.sleep_score)
+        msg += self._create_rhr(health_summary.rhr)
         msg += self._create_hrv(health_summary.hrv)
 
         super().__init__(
@@ -48,6 +54,14 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
             description=msg,
             color=0x10A5E1,
         )
+
+    # XXX: Consider generic method for creating metrics messages
+    def _create_rhr(self, rhr: RhrMetrics) -> str:
+        rhr_recent_str = rhr.current
+        week_avg_str = round(rhr.avg)
+        diff_to_avg_str = _value_to_signed_str(round(rhr.diff_to_average))
+
+        return f"```❤️ Resting HR: {rhr_recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
     def _create_hrv(self, hrv_metrics: HrvMetrics) -> str:
         hrv_recent_str = hrv_metrics.current
@@ -63,9 +77,7 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
     def _create_sleep_score(self, metrics: SleepScoreMetrics) -> str:
         recent_str = metrics.current
         week_avg_str = round(metrics.avg)
-        diff_to_avg_str = (
-            _value_to_signed_str(round(metrics.diff_to_average))
-        )
+        diff_to_avg_str = _value_to_signed_str(round(metrics.diff_to_average))
 
         return f"```😴 Sleep Score: {recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
