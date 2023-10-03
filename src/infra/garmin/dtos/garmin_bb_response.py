@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from datetime import date
 from typing import Any
 
-from pydantic import BaseModel, TypeAdapter
+from pydantic import BaseModel, Field, TypeAdapter
 
 
 class BodyBatteryValueDescriptorDTOListItem(BaseModel):
@@ -10,7 +11,9 @@ class BodyBatteryValueDescriptorDTOListItem(BaseModel):
 
 
 class BbEntry(BaseModel):
-    date: str
+    calendarDate: date = Field(
+        alias="date"
+    )  # use alias to follow naming of other DTOs...
     charged: int
     drained: int
     # Time range bb data recorded for

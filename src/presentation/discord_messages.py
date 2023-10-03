@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 from discord_webhook import DiscordEmbed, DiscordWebhook
 
 from src.domain.models import (
+    BodyBatteryMetrics,
     HealthSummary,
     HrvMetrics,
     RhrMetrics,
@@ -48,6 +49,7 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
         msg += self._create_sleep_score(health_summary.sleep_score)
         msg += self._create_rhr(health_summary.rhr)
         msg += self._create_hrv(health_summary.hrv)
+        msg += self._create_bb(health_summary.bb)
 
         super().__init__(
             title=title,
@@ -56,6 +58,17 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
         )
 
     # XXX: Consider generic method for creating metrics messages
+
+
+    def _create_bb(self, bb_metrics: BodyBatteryMetrics) -> str:
+        bb_recent_str = bb_metrics.current
+        week_avg_str = round(bb_metrics.avg)
+        diff_to_avg_str = _value_to_signed_str(round(bb_metrics.diff_to_average))
+
+        return f"```⚡ Body Battery: {bb_recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
+
+
+
     def _create_rhr(self, rhr: RhrMetrics) -> str:
         rhr_recent_str = rhr.current
         week_avg_str = round(rhr.avg)

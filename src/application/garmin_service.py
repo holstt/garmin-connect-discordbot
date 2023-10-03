@@ -20,6 +20,7 @@ T = TypeVar(
         dtos.GarminHrvResponse,
         dtos.GarminSleepScoreResponse,
         dtos.GarminRhrResponse,
+        dtos.GarminBbResponse,
     ],
 )
 
@@ -45,12 +46,7 @@ class GarminService:
         # Early return in case of missing data to avoid unnecessary requests
         # XXX: Consider that all metrics are available for the same dates, maybe just request all and check. Such that code can be simplified
 
-        # Get RHR data
-        dto_rhr = self._get_and_ensure_includes_period_end(
-            period, self._client.get_daily_rhr
-        )
-        if not dto_rhr:
-            return None
+        # NB: Metrics obtained while sleeping most likely to be missing in today's data (e.g. if no sleep registered yet, or if not wearing device during sleep)
 
         # Get HRV data
         dto_hrv = self._get_and_ensure_includes_period_end(
@@ -73,6 +69,19 @@ class GarminService:
         if not dto_sleep_score:
             return None
 
+        # Get RHR data
+        dto_rhr = self._get_and_ensure_includes_period_end(
+            period, self._client.get_daily_rhr
+        )
+        if not dto_rhr:
+            return None
+
+        dto_bb = self._get_and_ensure_includes_period_end(
+            period, self._client.get_daily_bb
+        )
+        if not dto_bb:
+            return None
+
         # Create health summary
         health_summary = models.HealthSummary(
             date=period.end,
@@ -80,6 +89,7 @@ class GarminService:
             hrv=models.HrvMetrics(hrv_data=dto_hrv),
             sleep_score=models.SleepScoreMetrics(sleep_data=dto_sleep_score),
             rhr=models.RhrMetrics(rhr_data=dto_rhr),
+            bb=models.BodyBatteryMetrics(bb_data=dto_bb),
         )
 
         return health_summary

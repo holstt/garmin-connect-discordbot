@@ -5,11 +5,11 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Callable, Generic, TypeVar, Union
 
+from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
 from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
 from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse
 from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
-from src.infra.garmin.dtos.garmin_sleep_score_response import \
-    GarminSleepScoreResponse
+from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
 
 T = TypeVar("T")
 
@@ -83,6 +83,14 @@ class RhrMetrics(SimpleMetric):
         super().__init__(entries, lambda x: x.values.restingHR)
 
 
+class BodyBatteryMetrics(SimpleMetric):
+    def __init__(self, bb_data: GarminBbResponse):
+        entries = sorted(bb_data.entries, key=lambda x: x.calendarDate)
+        super().__init__(
+            entries, lambda x: max(val for (time, val) in x.bodyBatteryValuesArray)
+        )
+
+
 class SleepScoreMetrics(SimpleMetric):
     def __init__(self, sleep_data: GarminSleepScoreResponse):
         entries = sorted(sleep_data.entries, key=lambda x: x.calendarDate)
@@ -151,3 +159,4 @@ class HealthSummary:
     hrv: HrvMetrics
     sleep_score: SleepScoreMetrics
     rhr: RhrMetrics
+    bb: BodyBatteryMetrics
