@@ -12,6 +12,7 @@ from src.utils import to_YYYYMMDD
 logger = logging.getLogger(__name__)
 
 
+# Require dto type to implement a from_json method
 class FromJsonProtocol(Protocol):
     @staticmethod
     def from_json(json: Any) -> Any:
@@ -37,6 +38,8 @@ def save_dto_to_file(
 
 
 # Load dto from json file
+# Loads first file that matches endpoint associated with dto type
+# TODO: Generate some fake test data for repo
 def load_dto_from_file(dto_type: Type[T]) -> T:
     if not json_dir.exists():
         raise IOError(f"Json data directory does not exist: {json_dir}")

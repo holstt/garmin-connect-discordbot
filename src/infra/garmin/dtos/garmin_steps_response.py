@@ -1,11 +1,12 @@
 from dataclasses import dataclass
+from datetime import date, datetime
 from typing import Any
 
 from pydantic import BaseModel, TypeAdapter
 
 
 class StepsEntry(BaseModel):
-    calendarDate: str
+    calendarDate: date
     totalSteps: int
     totalDistance: int
     stepGoal: int
@@ -16,7 +17,7 @@ class GarminStepsResponse:
     entries: list[StepsEntry]
 
     @staticmethod
-    def from_json(json_dict: dict[str, Any]) -> "GarminStepsResponse":
+    def from_json(json: Any) -> "GarminStepsResponse":
         adapter = TypeAdapter(list[StepsEntry])
-        entries = adapter.validate_python(json_dict)
+        entries = adapter.validate_python(json)
         return GarminStepsResponse(entries)

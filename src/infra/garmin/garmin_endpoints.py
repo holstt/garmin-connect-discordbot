@@ -8,9 +8,9 @@ import src.utils as utils
 class GarminEndpoint(Enum):
     DAILY_SLEEP = "/wellness-service/stats/sleep/daily/{start_date}/{end_date}"
 
-    DAILY_SLEEP_DETAILED = (  # Not used yet. Provides more detailed sleep data
-        "/sleep-service/stats/sleep/daily/{start_date}/{end_date}"
-    )
+    # DAILY_SLEEP_DETAILED = (  # Not used yet. Provides more detailed sleep data
+    #     "/sleep-service/stats/sleep/daily/{start_date}/{end_date}"
+    # )
     DAILY_SLEEP_SCORE = (
         "/wellness-service/stats/daily/sleep/score/{start_date}/{end_date}"
     )

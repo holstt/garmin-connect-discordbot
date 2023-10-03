@@ -8,7 +8,7 @@ from pydantic import BaseModel, TypeAdapter
 class Values(BaseModel):
     deepSleepSeconds: int
     awakeSleepSeconds: int
-    totalSleepSeconds: int
+    totalSleepSeconds: int  # Total sleep does not include awake time
     lightSleepSeconds: int
     REMSleepSeconds: int
 

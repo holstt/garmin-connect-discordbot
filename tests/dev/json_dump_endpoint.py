@@ -16,6 +16,8 @@ time_provider = TimeProvider()
 # Dumps json response from garmin api to file for use in tests/debugging without having to call the api
 
 ENDPOINT = GarminEndpoint.DAILY_SLEEP_SCORE
+SHOULD_GET_ALL_ENDPOINTS = True
+
 period = DatePeriod.from_last_4_weeks(time_provider.now().date())
 # period = DatePeriod.from_last_7_days(time_provider.now().date())
 
@@ -32,9 +34,20 @@ client = GarminApiClient(
 
 client.login()
 
-json_response = client.get_data(
-    ENDPOINT,
-    period,
-)
+if SHOULD_GET_ALL_ENDPOINTS:
+    for endpoint in GarminEndpoint:
+        json_response = client.get_data(
+            endpoint,
+            period,
+        )
 
-save_dto_to_file(json_response, period, ENDPOINT)
+        save_dto_to_file(json_response, period, endpoint)
+        logger.info(f"Saved json for {endpoint}")
+
+else:
+    json_response = client.get_data(
+        ENDPOINT,
+        period,
+    )
+
+    save_dto_to_file(json_response, period, ENDPOINT)
