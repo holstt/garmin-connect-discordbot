@@ -1,36 +1,26 @@
-import json
 import logging
-import os
 from datetime import date, timedelta
-from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
-import garth
 import requests  # type: ignore
-from garminconnect import Garmin, GarminConnectAuthenticationError  # type: ignore
+from garminconnect import Garmin  # type: ignore
 from garth.exc import GarthHTTPError
 
-import src.utils as utils
+from src.domain.common import DatePeriod
+from src.infra.garmin.garmin_endpoints import GarminEndpoint
 from src.infra.time_provider import TimeProvider  # type: ignore
 
 # XXX: Consider handling these errors from garminconnect lib: GarminConnectConnectionError,; GarminConnectTooManyRequestsError,
 
-
 logger = logging.getLogger(__name__)
+
+# type alias for json
+JsonResponseType = Union[dict[Any, Any], list[Any]]
 
 
 class GarminApiClientError(Exception):
     pass
-
-
-# 'garminconnect' library only supports fetching data for a single day, so we define date range endpoints and use garminconnect's internal client directly to fetch.
-class GarminEndpoint(Enum):
-    DAILY_SLEEP = "/wellness-service/stats/sleep/daily/{start_date}/{end_date}"
-    DAILY_SLEEP_SCORE = (
-        "/wellness-service/stats/daily/sleep/score/{start_date}/{end_date}"
-    )
-    DAILY_HRV = "daily/{start_date}/{end_date}"
 
 
 # Wraps the base client from garminconnect ext. library. We need to modify the endpoint urls in order to get a range of data instead of just one day
@@ -57,8 +47,8 @@ class GarminApiClient:
                 "No session file path provided. Session will only be kept in memory."
             )
 
+    # TODO: Move responsibility for auth
     # Authenticate with garmin.
-    # May be called initially by external callers to confirm that client is able to login.
     # Client will relogin automatically when needed (if session has expired). XXX: Not sure new version of garminconnect library does this.
     def login(self):
         # Log in and save the session to disk XXX: Make a base class that handles this?
@@ -92,32 +82,23 @@ class GarminApiClient:
             self._base_client.garth.dump(str(self._session_dir))
 
     def get_data(
-        self, endpoint: GarminEndpoint, start_date: date, end_date: date
-    ) -> dict[str, Any]:
+        self, endpoint: GarminEndpoint, period: DatePeriod
+    ) -> Optional[JsonResponseType]:
         """
         Fetch data from the specified endpoint between start_date and end_date.
+        return: Json
         """
 
-        self.reinit_client_if_needed()
-
-        endpoint_template = endpoint.value
-        endpoint_str = self._format_endpoint(endpoint_template, start_date, end_date)
-
-        # Special case for hrv # XXX: Or can we use the same url?
-        # XXX: Not using same pattern as get_data() atm
-        if endpoint == GarminEndpoint.DAILY_HRV:
-            # Note: cdate argument is not validated by garminconnect library but just concatenated to base url, so we pass our own custom string for better data
-            request_func = lambda: self._base_client.get_hrv_data(cdate=endpoint_str)
-        else:
-            request_func = lambda: self._get(endpoint_str)
-
+        self._reinit_client_if_needed()
+        endpoint_str = endpoint.format(period.start, period.end)
+        request_func = lambda: self._get(endpoint_str)
         response_json = self._execute_request(request_func)
         return response_json
 
     # XXX: When running on remote server, Garmin base client stops working after a while. (seems not to be a session issue)
     # XXX: This is a workaround for now. Should be investigated further.
     # NB: Not used after migrating to garminconnect 0.2.7 to see if it fixes the issue.
-    def reinit_client_if_needed(self):
+    def _reinit_client_if_needed(self):
         return
         max_client_age = timedelta(minutes=1)
         # Reinit if more than max_client_age has passed since last init
@@ -133,29 +114,25 @@ class GarminApiClient:
             self._client_age = self._time_provider.now()
             self.login()
 
-    # Injects start and end date into given endpoint url template
-    def _format_endpoint(
-        self, endpoint_template: str, start_date: date, end_date: date
-    ) -> str:
-        return endpoint_template.format(
-            start_date=utils.to_YYYYMMDD(start_date),
-            end_date=utils.to_YYYYMMDD(end_date),
-        )
-
-    def _get(self, endpoint_url: str) -> dict[str, Any]:
+    # Returns json response as dict, list. None if response is empty
+    def _get(self, endpoint_url: str) -> Optional[JsonResponseType]:
         try:
             # Use base client's internal http client directly to get better data for urls not in library
-            response_json: dict[str, Any] = self._base_client.connectapi(endpoint_url)  # type: ignore
+            response_json: Optional[JsonResponseType] = self._base_client.connectapi(
+                endpoint_url
+            )
 
         except requests.exceptions.JSONDecodeError as e:
             raise GarminApiClientError(
                 f"Failed to decode response from Garmin: {e}. For endpoint: {endpoint_url}"
             ) from e
 
-        return response_json  # type: ignore
+        return response_json
 
     # General executor, that catches any exceptions thrown by the request function and retries request after re-login
-    def _execute_request(self, request_func: Callable[[], dict[str, Any]]):
+    def _execute_request(
+        self, request_func: Callable[[], Optional[JsonResponseType]]
+    ) -> Optional[JsonResponseType]:
         try:
             # Execute request (using current session)
             # If it fails, the session may be invalid or expired

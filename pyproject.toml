@@ -1,18 +1,20 @@
 [tool.poetry]
-name = "garmin-health-discordbot"
+name = "garmin-connect-discordbot"
 version = "0.1.0"
 description = ""
 authors = ["holstt"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = ">=3.11,<3.13"
 discord-webhook = "^1.1.0"
 python-dotenv = "^1.0.0"
 garminconnect = "^0.2.7"
 python-dateutil = "^2.8.2"
 apscheduler = "^3.10.1"
 hypothesis = "^6.72.1"
+pydantic = "^2.4.2"
+matplotlib = "^3.8.0"
 
 
 [tool.poetry.group.dev.dependencies]

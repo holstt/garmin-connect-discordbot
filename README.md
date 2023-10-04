@@ -4,30 +4,31 @@ Discord bot providing a daily summary of your Garmin Connect health metrics
 
 <img src="docs/discord_message_example.png" width=80%>
 
+*NB: Synthetic data generated for demonstration purposes - may contain inconsistencies*
+
 ## Features
 
-- Get daily summary as soon as yesterday's metrics become available on Garmin Connect (i.e. when your Garmin device has synced with the phone)
-- Monitor metrics: Currently includes Sleep, Sleep Score, HRV
-- Spot trends: Compares the most recent metric value to its weekly average
-- Docker support: Easy deployment using Docker Compose including scripts for a more secure setup in production environments
+-   Get daily summary as soon as yesterday's metrics become available on Garmin Connect (i.e. when your Garmin device has synced with the phone)
+-   Monitor metrics: Currently includes Sleep, Sleep Score, HRV, Resting HR, Body Battery and Stress Level (your watch must support these metrics)
+-   Spot trends: Compares the most recent metric value to its weekly average
+-   Visualize Progress:
+    -   Sleep chart: 7-day bar plot of sleep stages and sleep scores, 4-week stacked area chart with 7-day moving average of sleep stages and sleep scores, 4-week waffle chart with sleep score color gradient
+    -   Metrics chart: Small 7-day bar plots of each metric
+-   Docker support: Easy deployment using Docker Compose including scripts for a more secure setup in production environments
 
-
-#### Todo:
-- [ ] Add more metrics
-  - [ ] Heart rate
-  - [ ] Body battery
-  - [ ] Steps
-  - [ ] Stress Score
-- [ ] Customize which metrics to include in the daily update
-- [ ] End of week summary with activity overview, weekly distance, frequency for each activity etc.
-- [ ] Generate chart and include as image in the daily/weekly update to visualize progress
+**TODO:**
+- [ ] Configure which metrics to include in the daily update. Not all watches support all metrics
+- [ ] Add and vizualize activity e.g. using intensity minutes, activity frequency/duration etc.
+- [ ] End of week summary with activity overview, weekly distance, frequency for each activity etc. Could also include metrics and be an alternative to the daily summary to reduce notifications
+- [ ] Data analysis: Provide insights into trends and correlations between metrics
 
 ## Requirements
 
-- A [Garmin Connect](https://connect.garmin.com/) account and a Garmin device to collect the data
-- A [Discord webhook URL](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) (interaction with the bot is not relevant with current feature set, so we don't need to create a bot account)
-- (Only if running locally) The [Poetry package manager](https://python-poetry.org/docs/#installation)
-- (Only if running with Docker) [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) 
+-   A [Garmin Connect](https://connect.garmin.com/) account and a Garmin device to collect the data
+-   A [Discord webhook URL](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) (interaction with the bot is not relevant with current feature set, so we don't need to create a bot account)
+-   (Only if running locally) The [Poetry package manager](https://python-poetry.org/docs/#installation)
+-   (Only if running with Docker) [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+
 
 
 ## Getting Started
@@ -96,7 +97,7 @@ poetry shell
 python ./main.py
 ```
 
-- If you use an `.env` file to configure the environment, the program assumes it is placed in the root of the project folder. Alternatively, you can provide a custom path for your environment file using `./main.py -e path/to/env`
+-   If you use an `.env` file to configure the environment, the program assumes it is placed in the root of the project folder. Alternatively, you can provide a custom path for your environment file using `./main.py -e path/to/env`
 
 ## Docker 🐳
 

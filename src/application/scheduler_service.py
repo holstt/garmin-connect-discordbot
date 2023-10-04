@@ -9,7 +9,7 @@ from apscheduler.schedulers.background import BlockingScheduler  # type: ignore
 from apscheduler.triggers.cron import CronTrigger  # type: ignore
 
 from src.application.garmin_service import GarminService
-from src.domain.models import HealthSummary
+from src.domain.metrics import HealthSummary
 from src.infra.time_provider import TimeProvider  # type: ignore
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,9 @@ class GarminFetchDataScheduler:
         job_name: str,
     ):
         # Check if job should be run immediately
-        current_time = self._time_provider.now()
+        current_time = (
+            self._time_provider.now()
+        )  # FIX: not using time zone speficied by user
 
         if fetch_start_time <= current_time.time():
             logger.info(

@@ -31,6 +31,10 @@ def load_env():
     if env_path:
         logger.info(f"Loading environment file from {env_path}")
         load_dotenv(dotenv_path=env_path)
+    else:
+        logger.info(
+            "No environment file provided. Using environment variables from system."
+        )
 
 
 def _get_args():

@@ -5,8 +5,8 @@ from garminconnect import Garmin  # type: ignore
 from src.application.garmin_service import GarminService
 from src.application.scheduler_service import GarminFetchDataScheduler
 from src.config import Config
-from src.infra.discord_api_adapter import DiscordApiAdapter
-from src.infra.discord_api_client import DiscordApiClient
+from src.infra.discord.discord_api_adapter import DiscordApiAdapter
+from src.infra.discord.discord_api_client import DiscordApiClient
 from src.infra.garmin.garmin_api_adapter import GarminApiAdapter
 from src.infra.garmin.garmin_api_client import GarminApiClient
 from src.infra.time_provider import TimeProvider
@@ -40,7 +40,7 @@ def resolve(app_config: Config) -> Dependencies:
     garmin_service = GarminService(garmin_adapter)
 
     discord_client = DiscordApiClient(
-        app_config.webhook_url, time_provider, service_name="garmin-health-bot"
+        app_config.webhook_url, time_provider, service_name="garmin-connect-bot"
     )
 
     discord_api_adapter = DiscordApiAdapter(discord_client)
