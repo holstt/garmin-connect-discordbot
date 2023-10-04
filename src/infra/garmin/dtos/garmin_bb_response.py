@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, Field, TypeAdapter
 
+from src.infra.garmin.garmin_api_client import JsonResponseType
+
 
 class BodyBatteryValueDescriptorDTOListItem(BaseModel):
     bodyBatteryValueDescriptorIndex: int
@@ -31,7 +33,7 @@ class GarminBbResponse:
     entries: list[BbEntry]
 
     @staticmethod
-    def from_json(json: Any) -> "GarminBbResponse":
+    def from_json(json: JsonResponseType) -> "GarminBbResponse":
         adapter = TypeAdapter(list[BbEntry])
         entries = adapter.validate_python(json)
         return GarminBbResponse(entries)

@@ -1,8 +1,8 @@
 import logging
 from datetime import date
-from typing import Any
+from typing import Any, Optional
 
-from src.domain.models import DatePeriod
+from src.domain.common import DatePeriod
 from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
 from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
 from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse
@@ -31,30 +31,32 @@ class GarminApiAdapter:
     def __init__(self, api_client: GarminApiClient) -> None:
         self._api_client = api_client
 
-    def get_daily_rhr(self, period: DatePeriod) -> GarminRhrResponse:
+    def get_daily_rhr(self, period: DatePeriod) -> Optional[GarminRhrResponse]:
         json = self._api_client.get_data(GarminEndpoint.DAILY_RHR, period)
-        return GarminRhrResponse.from_json(json)
+        return GarminRhrResponse.from_json(json) if json else None
 
-    def get_daily_steps(self, period: DatePeriod) -> GarminStepsResponse:
+    def get_daily_steps(self, period: DatePeriod) -> Optional[GarminStepsResponse]:
         json = self._api_client.get_data(GarminEndpoint.DAILY_STEPS, period)
-        return GarminStepsResponse.from_json(json)
+        return GarminStepsResponse.from_json(json) if json else None
 
-    def get_daily_stress(self, period: DatePeriod) -> GarminStressResponse:
+    def get_daily_stress(self, period: DatePeriod) -> Optional[GarminStressResponse]:
         json = self._api_client.get_data(dto_to_endpoint[GarminStressResponse], period)
-        return GarminStressResponse.from_json(json)
+        return GarminStressResponse.from_json(json) if json else None
 
-    def get_daily_sleep(self, period: DatePeriod) -> GarminSleepResponse:
+    def get_daily_sleep(self, period: DatePeriod) -> Optional[GarminSleepResponse]:
         json = self._api_client.get_data(GarminEndpoint.DAILY_SLEEP, period)
-        return GarminSleepResponse.from_json(json)
+        return GarminSleepResponse.from_json(json) if json else None
 
-    def get_daily_sleep_score(self, period: DatePeriod) -> GarminSleepScoreResponse:
+    def get_daily_sleep_score(
+        self, period: DatePeriod
+    ) -> Optional[GarminSleepScoreResponse]:
         json = self._api_client.get_data(GarminEndpoint.DAILY_SLEEP_SCORE, period)
-        return GarminSleepScoreResponse.from_json(json)
+        return GarminSleepScoreResponse.from_json(json) if json else None
 
-    def get_daily_hrv(self, period: DatePeriod) -> GarminHrvResponse:
+    def get_daily_hrv(self, period: DatePeriod) -> Optional[GarminHrvResponse]:
         json = self._api_client.get_data(GarminEndpoint.DAILY_HRV, period)
-        return GarminHrvResponse.from_json(json)
+        return GarminHrvResponse.from_json(json) if json else None
 
-    def get_daily_bb(self, period: DatePeriod) -> GarminBbResponse:
+    def get_daily_bb(self, period: DatePeriod) -> Optional[GarminBbResponse]:
         json = self._api_client.get_data(GarminEndpoint.DAILY_BB, period)
-        return GarminBbResponse.from_json(json)
+        return GarminBbResponse.from_json(json) if json else None

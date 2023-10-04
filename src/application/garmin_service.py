@@ -2,8 +2,9 @@ import logging
 from datetime import date
 from typing import Optional, Union
 
-import src.domain.models as models
+import src.domain.metrics as metrics
 import src.infra.garmin.dtos as dtos
+from src.domain.common import DatePeriod
 from src.infra.garmin.garmin_api_adapter import GarminApiAdapter
 
 logger = logging.getLogger(__name__)
@@ -33,16 +34,14 @@ class GarminService:
     # Returns health stats for the past 7 days (including end date) or None if today has not been registered yet for one of the metrics
     def try_get_weekly_health_summary(
         self, week_end: date
-    ) -> Optional[models.HealthSummary]:
+    ) -> Optional[metrics.HealthSummary]:
         # Get start of week range
-        period = models.DatePeriod.from_last_7_days(week_end)
+        period = DatePeriod.from_last_7_days(week_end)
 
         # Try to get weekly metrics
         return self._try_get_summary(period)
 
-    def _try_get_summary(
-        self, period: models.DatePeriod
-    ) -> Optional[models.HealthSummary]:
+    def _try_get_summary(self, period: DatePeriod) -> Optional[metrics.HealthSummary]:
         # Get each metric and ensure that today is in the data
         # Early return in case of missing data to avoid unnecessary requests
         # XXX: Consider that all metrics are available for the same dates, maybe just request all and check. Such that code can be simplified
@@ -90,25 +89,29 @@ class GarminService:
             return None
 
         # Create health summary
-        health_summary = models.HealthSummary(
+        health_summary = metrics.HealthSummary(
             date=period.end,
-            sleep=models.SleepMetrics(sleep_data=dto_sleep),
-            hrv=models.HrvMetrics(hrv_data=dto_hrv),
-            sleep_score=models.SleepScoreMetrics(sleep_data=dto_sleep_score),
-            rhr=models.RhrMetrics(rhr_data=dto_rhr),
-            bb=models.BodyBatteryMetrics(bb_data=dto_bb),
-            stress=models.StressMetrics(stress_data=dto_stress),
+            sleep=metrics.SleepMetrics(sleep_data=dto_sleep),
+            hrv=metrics.HrvMetrics(hrv_data=dto_hrv),
+            sleep_score=metrics.SleepScoreMetrics(sleep_data=dto_sleep_score),
+            rhr=metrics.RhrMetrics(rhr_data=dto_rhr),
+            bb=metrics.BodyBatteryMetrics(bb_data=dto_bb),
+            stress=metrics.StressMetrics(stress_data=dto_stress),
         )
 
         return health_summary
 
     def _get_and_ensure_includes_period_end(
         self,
-        period: models.DatePeriod,
-        get_data_fn: Callable[[models.DatePeriod], T],
+        period: DatePeriod,
+        get_data_fn: Callable[[DatePeriod], Optional[T]],
     ) -> Optional[T]:
         # Try get data for period
-        data: Optional[T] = get_data_fn(period)
+        data = get_data_fn(period)
+
+        if not data:
+            logger.info(f"Empty data for {get_data_fn.__name__}")
+            return None
 
         # Ensure that the data includes the end date
         if period.end not in [x.calendarDate for x in data.entries]:

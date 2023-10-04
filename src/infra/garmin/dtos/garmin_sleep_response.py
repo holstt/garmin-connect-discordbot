@@ -4,6 +4,8 @@ from typing import Any
 
 from pydantic import BaseModel, TypeAdapter
 
+from src.infra.garmin.garmin_api_client import JsonResponseType
+
 
 class Values(BaseModel):
     deepSleepSeconds: int
@@ -23,7 +25,7 @@ class GarminSleepResponse:
     entries: list[SleepEntry]
 
     @staticmethod
-    def from_json(json: Any) -> "GarminSleepResponse":
+    def from_json(json: JsonResponseType) -> "GarminSleepResponse":
         adapter = TypeAdapter(list[SleepEntry])
         entries = adapter.validate_python(json)
         return GarminSleepResponse(entries)

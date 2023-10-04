@@ -1,4 +1,4 @@
-from src.domain.models import HealthSummary
+from src.domain.metrics import HealthSummary
 from src.infra.discord.discord_api_client import DiscordApiClient
 from src.presentation.discord_messages import (
     DiscordErrorMessage,
@@ -13,12 +13,12 @@ class DiscordApiAdapter:
         self,
         discord_client: DiscordApiClient,
     ):
-        self.discord_client = discord_client
+        self._discord_client = discord_client
 
     # Send health summary to discord webhook
     def send_health_summary(self, healthSummary: HealthSummary) -> None:
         discord_message = DiscordHealthSummaryMessage(healthSummary)
-        self.discord_client.send_message(discord_message)
+        self._discord_client.send_message(discord_message)
 
     # Send error message to discord webhook
     def send_error(
@@ -27,7 +27,7 @@ class DiscordApiAdapter:
         error_message: str,
     ) -> None:
         discord_message = DiscordErrorMessage(error_name, error_message)
-        self.discord_client.send_message(discord_message)
+        self._discord_client.send_message(discord_message)
 
     def send_exception(
         self,
@@ -35,4 +35,4 @@ class DiscordApiAdapter:
         stack_trace: str,
     ) -> None:
         discord_message = DiscordExceptionMessage(exception, stack_trace)
-        self.discord_client.send_message(discord_message)
+        self._discord_client.send_message(discord_message)

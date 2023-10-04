@@ -1,20 +1,22 @@
 import logging
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 
 import requests  # type: ignore
 from garminconnect import Garmin  # type: ignore
 from garth.exc import GarthHTTPError
 
-from src.domain.models import DatePeriod
+from src.domain.common import DatePeriod
 from src.infra.garmin.garmin_endpoints import GarminEndpoint
 from src.infra.time_provider import TimeProvider  # type: ignore
 
 # XXX: Consider handling these errors from garminconnect lib: GarminConnectConnectionError,; GarminConnectTooManyRequestsError,
 
-
 logger = logging.getLogger(__name__)
+
+# type alias for json
+JsonResponseType = Union[dict[Any, Any], list[Any]]
 
 
 class GarminApiClientError(Exception):
@@ -79,7 +81,9 @@ class GarminApiClient:
             logger.info(f"Saving current session to '{self._session_dir}'")
             self._base_client.garth.dump(str(self._session_dir))
 
-    def get_data(self, endpoint: GarminEndpoint, period: DatePeriod) -> Any:
+    def get_data(
+        self, endpoint: GarminEndpoint, period: DatePeriod
+    ) -> Optional[JsonResponseType]:
         """
         Fetch data from the specified endpoint between start_date and end_date.
         return: Json
@@ -110,20 +114,25 @@ class GarminApiClient:
             self._client_age = self._time_provider.now()
             self.login()
 
-    def _get(self, endpoint_url: str) -> Any:
+    # Returns json response as dict, list. None if response is empty
+    def _get(self, endpoint_url: str) -> Optional[JsonResponseType]:
         try:
             # Use base client's internal http client directly to get better data for urls not in library
-            response_json = self._base_client.connectapi(endpoint_url)  # type: ignore
+            response_json: Optional[JsonResponseType] = self._base_client.connectapi(
+                endpoint_url
+            )
 
         except requests.exceptions.JSONDecodeError as e:
             raise GarminApiClientError(
                 f"Failed to decode response from Garmin: {e}. For endpoint: {endpoint_url}"
             ) from e
 
-        return response_json  # type: ignore
+        return response_json
 
     # General executor, that catches any exceptions thrown by the request function and retries request after re-login
-    def _execute_request(self, request_func: Callable[[], Any]):
+    def _execute_request(
+        self, request_func: Callable[[], Optional[JsonResponseType]]
+    ) -> Optional[JsonResponseType]:
         try:
             # Execute request (using current session)
             # If it fails, the session may be invalid or expired

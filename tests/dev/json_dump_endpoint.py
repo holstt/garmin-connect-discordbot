@@ -3,7 +3,7 @@ import logging
 from garminconnect import Garmin  # type: ignore
 
 from src import config, logging_helper
-from src.domain.models import DatePeriod
+from src.domain.metrics import DatePeriod
 from src.infra.garmin.garmin_api_client import GarminApiClient
 from src.infra.garmin.garmin_endpoints import GarminEndpoint
 from src.infra.time_provider import TimeProvider

@@ -9,7 +9,7 @@ from apscheduler.schedulers.background import BlockingScheduler  # type: ignore
 from apscheduler.triggers.cron import CronTrigger  # type: ignore
 
 from src.application.garmin_service import GarminService
-from src.domain.models import HealthSummary
+from src.domain.metrics import HealthSummary
 from src.infra.time_provider import TimeProvider  # type: ignore
 
 logger = logging.getLogger(__name__)
