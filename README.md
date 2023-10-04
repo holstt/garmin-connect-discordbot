@@ -1,4 +1,4 @@
-# garmin-health-discordbot
+# garmin-connect-discordbot
 
 Discord bot providing a daily summary of your Garmin Connect health metrics
 
@@ -16,25 +16,26 @@ Discord bot providing a daily summary of your Garmin Connect health metrics
     -   Metrics chart: Small 7-day bar plots of each metric
 -   Docker support: Easy deployment using Docker Compose including scripts for a more secure setup in production environments
 
-**TODO:**
 
--   Configure which metrics to include in the daily update. Not all watches support all metrics
--   Add and vizualize activity e.g. using intensity minutes, activity frequency/duration etc.
--   End of week summary with activity overview, weekly distance, frequency for each activity etc. Could also include metrics and be an alternative to the daily summary to reduce notifications
--   Data analysis: Provide insights into trends and correlations between metrics
+- [ ] Configure which metrics to include in the daily update. Not all watches support all metrics
+- [ ] Add and vizualize activity e.g. using intensity minutes, activity frequency/duration etc.
+- [ ] End of week summary with activity overview, weekly distance, frequency for each activity etc. Could also include metrics and be an alternative to the daily summary to reduce notifications
+- [ ] Data analysis: Provide insights into trends and correlations between metrics
 
 ## Requirements
 
 -   A [Garmin Connect](https://connect.garmin.com/) account and a Garmin device to collect the data
 -   A [Discord webhook URL](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) (interaction with the bot is not relevant with current feature set, so we don't need to create a bot account)
--   The Poetry package manager, see [installation instructions](https://python-poetry.org/docs/#installation)
+-   (Only if running locally) The [Poetry package manager](https://python-poetry.org/docs/#installation)
 -   (Only if running with Docker) [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+
+
 
 ## Getting Started
 
 **1. Clone the repository**:
 
-```
+```bash
 git clone https://github.com/holstt/garmin-health-discordbot.git
 cd garmin-health-discordbot
 ```
@@ -45,7 +46,7 @@ The bot is configured using environment variables, which can be specified in a `
 
 `./env.example` provides an example of the required format. Rename the file to `.env` and edit the values as needed:
 
-```bash
+```properties
 # URL for the Discord webhook that should receive the daily health summary
 WEBHOOK_URL=https://discordapp.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz
 
@@ -80,19 +81,19 @@ DATA_DIRECTORY_PATH=path/to/data/directory
 
 **3. Install the dependencies and create a virtual environment**
 
-```
+```bash
 poetry install
 ```
 
 **4. Activate the virtual environment**
 
-```
+```bash
 poetry shell
 ```
 
 **5. Run the bot**
 
-```
+```bash
 python ./main.py
 ```
 
@@ -102,32 +103,31 @@ python ./main.py
 
 **3. From project root, navigate to the `./docker` folder**
 
-```
+```bash
 cd docker
 ```
 
 **4. Option 1: Run the Docker Compose project with restrictive permissions**
 
-`./docker` includes convenient scripts to simplify setting up and running the Docker container (`docker.dev.sh` and `docker.prod.sh` should be used). These scripts handle the creation of a dedicated Docker user, a container data directory on the host, and apply restrictive permissions on the data directory and environment file before running the container. Inspect the configuration in the scripts, and verify that the assumed host paths match your file structure.
+`./docker` includes convenient scripts to simplify setting up and running the Docker container with `docker.dev.sh` and `docker.prod.sh` being the entrypoints. These scripts handle the creation of a dedicated Docker user, a container data directory on the host, and apply restrictive permissions on the data directory and environment file before running the container. Inspect the configuration in the scripts, and verify that the assumed host paths match your file structure.
 
 Then run the script for your environment, e.g.:
 
-```
+```bash
 ./docker.prod.sh
 ```
 
 **4. Option 2: Run the Docker Compose project without restrictive permissions**
-
-For a less restrictive/simpler setup, you can edit and use the `docker-compose.yml` file. Replace the environment variables for the volume paths with concrete values matching your file structure and remove the `user` property to run the container as root. Then in the Dockerfile, remove the original `ENTRYPOINT` instruction and uncomment the simple `ENTRYPOINT` instruction that does not prevent the container from running as root.
+For a less restrictive/simpler setup, you can edit and use the `docker-compose.yml` file directly. Replace the environment variables for the volume paths with concrete values matching your file structure and remove the `user` property to run the container as root. Then in the Dockerfile, remove the original `ENTRYPOINT` instruction and uncomment the simple `ENTRYPOINT` instruction that does not prevent the container from running as root.
 
 Then run:
 
-```
+```bash
 docker-compose up --build
 ```
 
 or to keep it running in the background:
 
-```
+```bash
 docker-compose up -d --build && docker-compose logs -f
 ```
