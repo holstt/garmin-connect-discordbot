@@ -4,7 +4,7 @@ Discord bot providing a daily summary of your Garmin Connect health metrics
 
 <img src="docs/discord_message_example.png" width=80%>
 
-\*NB: Synthetic data generated for demonstration purposes - may contain inconsistencies
+*NB: Synthetic data generated for demonstration purposes - may contain inconsistencies*
 
 ## Features
 
@@ -16,7 +16,7 @@ Discord bot providing a daily summary of your Garmin Connect health metrics
     -   Metrics chart: Small 7-day bar plots of each metric
 -   Docker support: Easy deployment using Docker Compose including scripts for a more secure setup in production environments
 
-
+**TODO:**
 - [ ] Configure which metrics to include in the daily update. Not all watches support all metrics
 - [ ] Add and vizualize activity e.g. using intensity minutes, activity frequency/duration etc.
 - [ ] End of week summary with activity overview, weekly distance, frequency for each activity etc. Could also include metrics and be an alternative to the daily summary to reduce notifications
