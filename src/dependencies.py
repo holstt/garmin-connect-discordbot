@@ -40,7 +40,7 @@ def resolve(app_config: Config) -> Dependencies:
     garmin_service = GarminService(garmin_adapter)
 
     discord_client = DiscordApiClient(
-        app_config.webhook_url, time_provider, service_name="garmin-health-bot"
+        app_config.webhook_url, time_provider, service_name="garmin-connect-bot"
     )
 
     discord_api_adapter = DiscordApiAdapter(discord_client)
