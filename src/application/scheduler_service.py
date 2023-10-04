@@ -48,7 +48,9 @@ class GarminFetchDataScheduler:
         job_name: str,
     ):
         # Check if job should be run immediately
-        current_time = self._time_provider.now()
+        current_time = (
+            self._time_provider.now()
+        )  # FIX: not using time zone speficied by user
 
         if fetch_start_time <= current_time.time():
             logger.info(

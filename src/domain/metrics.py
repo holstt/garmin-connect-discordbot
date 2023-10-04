@@ -2,6 +2,7 @@ import datetime
 from abc import ABC
 from dataclasses import dataclass
 from datetime import timedelta
+from io import BytesIO
 from typing import Callable, TypeVar
 
 from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
@@ -44,8 +45,16 @@ class SimpleMetric(ABC):
         return average_by(self.entries, self.selector)
 
     @property
-    def diff_to_average(self) -> float:
+    def weekly_avg(self) -> float:
+        return average_by(self.entries[-7:], self.selector)
+
+    @property
+    def diff_to_avg(self) -> float:
         return self.current - self.avg
+
+    @property
+    def diff_to_weekly_avg(self) -> float:
+        return self.current - self.weekly_avg
 
     def diff_to_target(self, target: float) -> float:
         return self.current - target
@@ -103,7 +112,18 @@ class SleepMetrics:  # XXX: // SleepSummary
         return timedelta(seconds=average_sleep_seconds)
 
     @property
-    def diff_to_average(self) -> timedelta:
+    def weekly_avg(self) -> timedelta:
+        average_sleep_seconds = average_by(
+            self._entries[-7:], lambda x: x.values.totalSleepSeconds
+        )
+        return timedelta(seconds=average_sleep_seconds)
+
+    @property
+    def diff_to_weekly_avg(self) -> timedelta:
+        return self.current - self.weekly_avg
+
+    @property
+    def diff_to_avg(self) -> timedelta:
         return self.current - self.avg
 
     def get_diff_to_hour(self, hour: int) -> timedelta:
@@ -125,8 +145,14 @@ class HrvMetrics:
         return self._entries[-1].weeklyAvg
 
     @property
+    def avg(self) -> float:
+        return average_by(
+            self._entries, lambda x: x.lastNightAvg if x.lastNightAvg else 0
+        )
+
+    @property
     # Returns none if no hrv registered for the night
-    def diff_to_average(self) -> int | None:
+    def diff_to_weekly_avg(self) -> int | None:
         return self.current - self.weekly_avg if self.current else None
 
     @property
@@ -144,3 +170,5 @@ class HealthSummary:
     rhr: RhrMetrics
     bb: BodyBatteryMetrics
     stress: StressMetrics
+    sleep_plot: BytesIO
+    metrics_plot: BytesIO

@@ -65,53 +65,53 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
     def _create_stress(self, stress_metrics: StressMetrics) -> str:
         stress_recent_str = stress_metrics.current
         week_avg_str = round(stress_metrics.avg)
-        diff_to_avg_str = _value_to_signed_str(round(stress_metrics.diff_to_average))
+        diff_to_avg_str = _value_to_signed_str(round(stress_metrics.diff_to_avg))
 
-        return f"```🤯 Stress Level: {stress_recent_str}/100 (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
+        return f"```🤯 Stress Level: {stress_recent_str}/100 - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
     def _create_bb(self, bb_metrics: BodyBatteryMetrics) -> str:
         bb_recent_str = bb_metrics.current
         week_avg_str = round(bb_metrics.avg)
-        diff_to_avg_str = _value_to_signed_str(round(bb_metrics.diff_to_average))
+        diff_to_avg_str = _value_to_signed_str(round(bb_metrics.diff_to_avg))
 
-        return f"```⚡ Body Battery: {bb_recent_str}/100 (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
+        return f"```⚡ Body Battery: {bb_recent_str}/100 - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
     def _create_rhr(self, rhr: RhrMetrics) -> str:
         rhr_recent_str = rhr.current
         week_avg_str = round(rhr.avg)
-        diff_to_avg_str = _value_to_signed_str(round(rhr.diff_to_average))
+        diff_to_avg_str = _value_to_signed_str(round(rhr.diff_to_avg))
 
-        return f"```❤️ Resting HR: {rhr_recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
+        return f"```❤️ Resting HR: {rhr_recent_str} - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
     def _create_hrv(self, hrv_metrics: HrvMetrics) -> str:
         hrv_recent_str = hrv_metrics.current
         week_avg_str = hrv_metrics.weekly_avg
         diff_to_avg_str = (
-            _value_to_signed_str(hrv_metrics.diff_to_average)
-            if hrv_metrics.diff_to_average is not None
+            _value_to_signed_str(hrv_metrics.diff_to_weekly_avg)
+            if hrv_metrics.diff_to_weekly_avg is not None
             else "N/A"
         )
 
-        return f"```💓 HRV: {hrv_recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
+        return f"```💓 HRV: {hrv_recent_str} - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
     def _create_sleep_score(self, metrics: SleepScoreMetrics) -> str:
         recent_str = metrics.current
         week_avg_str = round(metrics.avg)
-        diff_to_avg_str = _value_to_signed_str(round(metrics.diff_to_average))
+        diff_to_avg_str = _value_to_signed_str(round(metrics.diff_to_avg))
 
-        return f"```😴 Sleep Score: {recent_str}/100 (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
+        return f"```😴 Sleep Score: {recent_str}/100 - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
 
     def _create_sleep(self, sleep_metrics: SleepMetrics) -> str:
         sleep_recent_str = _format_timedelta(sleep_metrics.current)
         week_avg_str = _format_timedelta(sleep_metrics.avg)
         diff_to_avg_str = _format_timedelta(
-            sleep_metrics.diff_to_average, should_include_sign=True
+            sleep_metrics.diff_to_avg, should_include_sign=True
         )
         diff_to_8h_str = _format_timedelta(
             sleep_metrics.get_diff_to_hour(8), should_include_sign=True
         )
 
-        return f"```💤 Sleep: {sleep_recent_str} (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str}, Δ 8h: {diff_to_8h_str})```"
+        return f"```💤 Sleep: {sleep_recent_str} - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str}, Δ 8h: {diff_to_8h_str})```"
 
 
 def _value_to_signed_str(value: float) -> str:

@@ -8,12 +8,17 @@ logger = logging.getLogger(__name__)
 
 class HealthSummaryReadyEventHandler:
     def __init__(self, discord_service: DiscordApiAdapter):
-        self.discord_service = discord_service
+        self._service = discord_service
 
     # When a health summary is ready, send it to discord
     def handle(self, summary: HealthSummary) -> None:
         logger.info(f"Handling event: Health summary ready")
-        self.discord_service.send_health_summary(summary)
+        self._service.send_health_summary(summary)
+        # Send plots. TODO: Only if config is set
+        self._service.send_images(
+            [summary.sleep_plot, summary.metrics_plot],
+            ["sleep_plot.png", "metrics_plot.png"],
+        )
 
 
 class ExceptionOccurredEventHandler:

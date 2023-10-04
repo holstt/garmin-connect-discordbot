@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import Any, Protocol, Type, TypeVar
 
-from src.domain.metrics import DatePeriod
+from src.domain.common import DatePeriod
 from src.infra.garmin.dtos.garmin_stress_response import GarminDto
 from src.infra.garmin.garmin_api_adapter import dto_to_endpoint
 from src.infra.garmin.garmin_endpoints import GarminEndpoint

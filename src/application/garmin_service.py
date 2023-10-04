@@ -6,6 +6,8 @@ import src.domain.metrics as metrics
 import src.infra.garmin.dtos as dtos
 from src.domain.common import DatePeriod
 from src.infra.garmin.garmin_api_adapter import GarminApiAdapter
+from src.infra.plotting.metrics_plot import MetricsData
+from src.infra.plotting.plotting_service import create_metrics_plot, create_sleep_plot
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +28,8 @@ T = TypeVar(
     ],
 )
 
+DAYS_IN_WEEK = 7
+
 
 class GarminService:
     def __init__(self, client: GarminApiAdapter):
@@ -35,8 +39,9 @@ class GarminService:
     def try_get_weekly_health_summary(
         self, week_end: date
     ) -> Optional[metrics.HealthSummary]:
-        # Get start of week range
-        period = DatePeriod.from_last_7_days(week_end)
+        # 4 weeks of data needed for the summary if includes plots
+        period = DatePeriod.from_last_4_weeks(week_end)
+        # period = DatePeriod.from_last_7_days(week_end)
 
         # Try to get weekly metrics
         return self._try_get_summary(period)
@@ -88,6 +93,24 @@ class GarminService:
         if not dto_stress:
             return None
 
+        # Create metrics plot for weekly period
+        metrics_plot = create_metrics_plot(
+            MetricsData(
+                sleep=dto_sleep,
+                sleep_score=dto_sleep_score,
+                bb=dto_bb,
+                rhr=dto_rhr,
+                stress=dto_stress,
+                hrv=dto_hrv,
+                # steps=None,
+            ).get_last_n(DAYS_IN_WEEK)
+        )
+
+        # Create sleep plot for full period
+        sleep_plot = create_sleep_plot(
+            dto_sleep, dto_sleep_score, ma_window_size=DAYS_IN_WEEK
+        )
+
         # Create health summary
         health_summary = metrics.HealthSummary(
             date=period.end,
@@ -97,6 +120,8 @@ class GarminService:
             rhr=metrics.RhrMetrics(rhr_data=dto_rhr),
             bb=metrics.BodyBatteryMetrics(bb_data=dto_bb),
             stress=metrics.StressMetrics(stress_data=dto_stress),
+            metrics_plot=metrics_plot,
+            sleep_plot=sleep_plot,
         )
 
         return health_summary
@@ -112,6 +137,10 @@ class GarminService:
         if not data:
             logger.info(f"Empty data for {get_data_fn.__name__}")
             return None
+
+        logger.info(
+            f"Got {get_data_fn.__name__} data with num entries: {len(data.entries)}"
+        )
 
         # Ensure that the data includes the end date
         if period.end not in [x.calendarDate for x in data.entries]:

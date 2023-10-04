@@ -35,7 +35,7 @@ class MetricsData(NamedTuple):
     sleep_score: dtos.GarminSleepScoreResponse
     bb: dtos.GarminBbResponse
     rhr: dtos.GarminRhrResponse
-    steps: dtos.GarminStepsResponse
+    # steps: dtos.GarminStepsResponse
     stress: dtos.GarminStressResponse
     hrv: dtos.GarminHrvResponse
 
@@ -45,7 +45,7 @@ class MetricsData(NamedTuple):
             GarminSleepScoreResponse(self.sleep_score.entries[-n:]),
             GarminBbResponse(self.bb.entries[-n:]),
             GarminRhrResponse(self.rhr.entries[-n:]),
-            GarminStepsResponse(self.steps.entries[-n:]),
+            # GarminStepsResponse(self.steps.entries[-n:]),
             GarminStressResponse(self.stress.entries[-n:]),
             GarminHrvResponse(hrvSummaries=self.hrv.entries[-n:], userProfilePk=0),
         )
@@ -62,17 +62,26 @@ def plot(metrics_data: MetricsData):
     plot_data = _transform(metrics_data)
 
     # Just get the dates from one of the metrics (they should all be the same)
-    dates = [entry.calendarDate for entry in metrics_data.steps.entries]
+    dates = [entry.calendarDate for entry in metrics_data.bb.entries]
     weekdays = [date.strftime("%a") for date in dates]
 
-    plt.figure(figsize=(11, 13))
+    fig = plt.figure(figsize=(11, 13))
+
+    COLS = 2
+    ROWS = (
+        len(plot_data) // COLS
+        if len(plot_data) % COLS == 0
+        else len(plot_data) // COLS + 1
+    )
 
     for idx, plot_metric in enumerate(plot_data, start=1):
-        ax = plt.subplot(4, 2, idx)
+        ax = plt.subplot(ROWS, COLS, idx)
         _add_subplot(dates, weekdays, plot_metric, ax)
 
-    plt.suptitle("Health Metrics (Last 7 Days)", fontsize=16)
+    plt.suptitle(f"Health Metrics (Last {len(dates)} days)", fontsize=16)
     plt.tight_layout()
+
+    return fig
 
 
 def _add_subplot(
@@ -112,11 +121,11 @@ def _add_subplot(
 
 def _transform(metrics_data: MetricsData):
     plot_data = [
-        MetricPlot(
-            name="Steps",
-            color="#1f77b4",
-            values=[entry.totalSteps for entry in metrics_data.steps.entries],
-        ),
+        # MetricPlot(
+        #     name="Steps",
+        #     color="#1f77b4",
+        #     values=[entry.totalSteps for entry in metrics_data.steps.entries],
+        # ),
         # MetricObj(name='Intensity Minutes', color='#ff7f0e', range=(0, 120)),
         MetricPlot(
             name="Sleep Duration",

@@ -12,12 +12,17 @@ def setup_logging(module_logger_name: str, base_log_level: int = logging.INFO):
     )
     logging.Formatter.converter = time.gmtime  # Use UTC
 
-    # Always log debug messages from apscheduler to follow the scheduling process
+    # Always log debug messages from apscheduler to follow the scheduling process #XXX: We should probably just log it ourselves
     library_logger = logging.getLogger("apscheduler")
     library_logger.setLevel(logging.DEBUG)
-    # Always log debug messages from our own code XXX: For now
+    # Always log debug messages from our own code XXX: For now, we should be consistent with the log level
     logger = logging.getLogger(module_logger_name)
     logger.setLevel(logging.DEBUG)
+
+    # Hide debug messages from these libraries
+    always_info = ["matplotlib", "PIL"]
+    for logger_name in always_info:
+        logging.getLogger(logger_name).setLevel(logging.INFO)
 
 
 def add_password_filter(password_to_redact: str):

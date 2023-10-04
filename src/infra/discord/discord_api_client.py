@@ -1,4 +1,5 @@
 import logging
+from io import BytesIO
 from typing import Optional
 
 from discord_webhook import DiscordEmbed, DiscordWebhook
@@ -45,3 +46,28 @@ class DiscordApiClient:
             raise DiscordException(f"Error sending message to Discord: {e}") from e
 
         logger.info(f"Message successfully sent to Discord. Response: {response}")
+
+    # XXX: Rate limit on sending multiple images in a row using this method? -> For multi image use send_images
+    def send_image(self, image: BytesIO, name: str) -> None:
+        self._base_client.add_file(file=image.read(), filename=name)
+
+        try:
+            response = self._base_client.execute()
+            response.raise_for_status()
+        except Exception as e:
+            raise DiscordException(f"Error sending image to Discord: {e}") from e
+
+        logger.info(f"Image successfully sent to Discord. Response: {response}")
+
+    # Attach multiple images to a single message
+    def send_images(self, images: list[BytesIO], names: list[str]) -> None:
+        for image, name in zip(images, names):
+            self._base_client.add_file(file=image.read(), filename=name)
+
+        try:
+            response = self._base_client.execute()
+            response.raise_for_status()
+        except Exception as e:
+            raise DiscordException(f"Error sending images to Discord: {e}") from e
+
+        logger.info(f"Images successfully sent to Discord. Response: {response}")

@@ -32,7 +32,9 @@ def get_config() -> Config:
     webhook_url = _get_env_variable_or_fail("WEBHOOK_URL")
 
     notify_time_of_day_str = _get_env_variable_or_fail("NOTIFY_TIME_OF_DAY")
-    time_zone_str = _get_env_variable_or_fail("TIME_ZONE")
+    time_zone_str = _get_env_variable_or_fail(
+        "TIME_ZONE"
+    )  # TODO: Should be part of confgi
     notify_time = _get_notify_time(notify_time_of_day_str, time_zone_str)
 
     # Get optionals

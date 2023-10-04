@@ -194,7 +194,7 @@ def plot_week_durations(week_plot: Axes, plotting_data: PlottingData):
 
 
 def plot_moving_avg_durations(plot: Axes, plotting_data: PlottingData):
-    logger.debug(f"Plotting days in moving avg. plot: {plotting_data.dates}")
+    logger.debug(f"Plotting days in moving avg. plot: {len(plotting_data.dates)}")
 
     plot.stackplot(
         # x axis is dates that where moving average is not None (i.e. not the first n days). We use the first segment, but should be the same for all
