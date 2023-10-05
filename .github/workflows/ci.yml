@@ -31,7 +31,7 @@ jobs:
             - run: poetry install
 
             # Lint with type checking
-            - run: pyright
+            - run: poetry pyright
             # - run: poetry run black --check .
             # - run: poetry run isort --check .
 
