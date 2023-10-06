@@ -1,20 +1,9 @@
 import logging
-import traceback
-from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
 
-from discord_webhook import DiscordEmbed, DiscordWebhook
+from discord_webhook import DiscordEmbed
 
-from src.domain.metrics import (
-    BodyBatteryMetrics,
-    HealthSummary,
-    HrvMetrics,
-    RhrMetrics,
-    SleepMetrics,
-    SleepScoreMetrics,
-    StressMetrics,
-)
-from src.infra.time_provider import TimeProvider
+import src.presentation.metric_line_builder as builder
+from src.domain.metrics import HealthSummary
 
 logger = logging.getLogger(__name__)
 
@@ -41,94 +30,22 @@ class DiscordExceptionMessage(DiscordEmbed):
 
 # Health summary discord dto/message
 class DiscordHealthSummaryMessage(DiscordEmbed):
-    def __init__(self, health_summary: HealthSummary):
-        title = f"Garmin Health Metrics, {health_summary.date.strftime('%d-%m-%Y')}"
+    def __init__(self, summary: HealthSummary):
+        title = f"Garmin Health Metrics, {summary.date.strftime('%d-%m-%Y')}"
         msg = ""
 
-        msg += self._create_sleep(health_summary.sleep)
-        msg += self._create_sleep_score(health_summary.sleep_score)
+        msg += builder.sleep_line("Sleep", "💤", summary.sleep)
+        msg += builder.metric_line("Sleep Score", "😴", summary.sleep_score, 100)
         msg += "\n"
-        msg += self._create_rhr(health_summary.rhr)
-        msg += self._create_hrv(health_summary.hrv)
+        msg += builder.metric_line("Resting HR", "❤️", summary.rhr)
+        msg += builder.hrv_line("HRV", "💓", summary.hrv)
         msg += "\n"
-        msg += self._create_bb(health_summary.bb)
-        msg += self._create_stress(health_summary.stress)
-
+        msg += builder.metric_line("Body Battery (max today)", "⚡", summary.bb, 100)
+        msg += builder.metric_line(
+            "Stress Level (current overall)", "🤯", summary.stress, 100
+        )
         super().__init__(
             title=title,
             description=msg,
             color=0x10A5E1,
         )
-
-    # XXX: Consider generic method for creating metrics messages
-
-    def _create_stress(self, stress_metrics: StressMetrics) -> str:
-        stress_recent_str = stress_metrics.current
-        week_avg_str = round(stress_metrics.avg)
-        diff_to_avg_str = _value_to_signed_str(round(stress_metrics.diff_to_avg))
-
-        return f"```🤯 Stress Level: {stress_recent_str}/100 - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
-
-    def _create_bb(self, bb_metrics: BodyBatteryMetrics) -> str:
-        bb_recent_str = bb_metrics.current
-        week_avg_str = round(bb_metrics.avg)
-        diff_to_avg_str = _value_to_signed_str(round(bb_metrics.diff_to_avg))
-
-        return f"```⚡ Body Battery: {bb_recent_str}/100 - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
-
-    def _create_rhr(self, rhr: RhrMetrics) -> str:
-        rhr_recent_str = rhr.current
-        week_avg_str = round(rhr.avg)
-        diff_to_avg_str = _value_to_signed_str(round(rhr.diff_to_avg))
-
-        return f"```❤️ Resting HR: {rhr_recent_str} - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
-
-    def _create_hrv(self, hrv_metrics: HrvMetrics) -> str:
-        hrv_recent_str = hrv_metrics.current
-        week_avg_str = hrv_metrics.weekly_avg
-        diff_to_avg_str = (
-            _value_to_signed_str(hrv_metrics.diff_to_weekly_avg)
-            if hrv_metrics.diff_to_weekly_avg is not None
-            else "N/A"
-        )
-
-        return f"```💓 HRV: {hrv_recent_str} - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
-
-    def _create_sleep_score(self, metrics: SleepScoreMetrics) -> str:
-        recent_str = metrics.current
-        week_avg_str = round(metrics.avg)
-        diff_to_avg_str = _value_to_signed_str(round(metrics.diff_to_avg))
-
-        return f"```😴 Sleep Score: {recent_str}/100 - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str})```"
-
-    def _create_sleep(self, sleep_metrics: SleepMetrics) -> str:
-        sleep_recent_str = _format_timedelta(sleep_metrics.current)
-        week_avg_str = _format_timedelta(sleep_metrics.avg)
-        diff_to_avg_str = _format_timedelta(
-            sleep_metrics.diff_to_avg, should_include_sign=True
-        )
-        diff_to_8h_str = _format_timedelta(
-            sleep_metrics.get_diff_to_hour(8), should_include_sign=True
-        )
-
-        return f"```💤 Sleep: {sleep_recent_str} - (weekly avg: {week_avg_str}, Δ avg: {diff_to_avg_str}, Δ 8h: {diff_to_8h_str})```"
-
-
-def _value_to_signed_str(value: float) -> str:
-    return f"{_get_sign(value)}{abs(value)}"
-
-
-# Returns sign of value
-def _get_sign(value: float) -> str:
-    return "-" if value < 0 else "+" if value > 0 else ""
-
-
-def _format_timedelta(delta: timedelta, should_include_sign: bool = False) -> str:
-    total_seconds = int(delta.total_seconds())
-    hours, remaining_seconds = divmod(abs(total_seconds), 3600)
-    minutes = remaining_seconds // 60
-    # Get sign
-    sign = _get_sign(total_seconds) if should_include_sign else ""
-    if hours == 0:
-        return f"{sign}{minutes}m"
-    return f"{sign}{hours}h{minutes}m"

@@ -1,5 +1,11 @@
 # garmin-connect-discordbot
 
+[![ci](https://github.com/holstt/garmin-connect-discordbot/actions/workflows/ci.yml/badge.svg)](https://github.com/holstt/garmin-connect-discordbot/actions/workflows/ci.yml)
+[![python](https://img.shields.io/badge/Python-3.11-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
+[![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Checked with pyright](https://microsoft.github.io/pyright/img/pyright_badge.svg)](https://microsoft.github.io/pyright/)
+
 Discord bot providing a daily summary of your Garmin Connect health metrics
 
 <img src="docs/discord_message_example.png" width=80%>
