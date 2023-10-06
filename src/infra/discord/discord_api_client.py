@@ -20,6 +20,7 @@ class DiscordApiClient:
         time_provider: TimeProvider,
         service_name: str,  # Username of discord message will be the service name
     ) -> None:
+        super().__init__()
         self._webhook_url = webhook_url
 
         self._base_client = DiscordWebhook(

@@ -29,6 +29,7 @@ dto_to_endpoint = {
 # Adapts the GarminApiClient to return DTOs instead of json dict
 class GarminApiAdapter:
     def __init__(self, api_client: GarminApiClient) -> None:
+        super().__init__()
         self._api_client = api_client
 
     def get_daily_rhr(self, period: DatePeriod) -> Optional[GarminRhrResponse]:

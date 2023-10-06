@@ -15,6 +15,7 @@ class DiscordApiAdapter:
         self,
         discord_client: DiscordApiClient,
     ):
+        super().__init__()
         self._client = discord_client
 
     # Send health summary to discord webhook

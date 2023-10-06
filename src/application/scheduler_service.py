@@ -32,6 +32,7 @@ class GarminFetchDataScheduler:
         summary_ready_event: Callable[[HealthSummary], None],
         exception_event: Optional[Callable[[Exception, str], None]],
     ):
+        super().__init__()
         self._garmin_service = garmin_service
         self._time_provider = time_provider
         self._summary_ready_event = summary_ready_event

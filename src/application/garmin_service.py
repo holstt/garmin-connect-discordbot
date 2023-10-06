@@ -33,6 +33,7 @@ DAYS_IN_WEEK = 7
 
 class GarminService:
     def __init__(self, client: GarminApiAdapter):
+        super().__init__()
         self._client = client
 
     # Returns health stats for the past 7 days (including end date) or None if today has not been registered yet for one of the metrics

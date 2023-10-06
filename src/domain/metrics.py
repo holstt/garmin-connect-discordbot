@@ -3,7 +3,9 @@ from abc import ABC
 from dataclasses import dataclass
 from datetime import timedelta
 from io import BytesIO
-from typing import Callable, TypeVar
+
+# T = TypeVar("T")
+from typing import Callable, Generic, Optional, TypeVar
 
 from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
 from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
@@ -12,41 +14,53 @@ from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
 from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
 from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
 
-T = TypeVar("T")
+L = TypeVar("L")  # List type
+R = TypeVar("R")  # Return type
 
 
-def average_by(items: list[T], prop_selector: Callable[[T], float]) -> float:
+def average_by(items: list[L], prop_selector: Callable[[L], float]) -> float:
     total = sum(prop_selector(item) for item in items)
     return total / len(items) if items else 0.0
 
 
-from typing import Callable, TypeVar
-
-P = TypeVar("P")
-
-
-class SimpleMetric(ABC):
-    def __init__(self, entries: list[P], selector: Callable[[P], float]):
+class BaseMetric(ABC, Generic[R]):
+    def __init__(
+        self,
+        entries: list[L],
+        selector: Callable[[L], R],
+        is_higher_better: bool = True,
+    ):
+        super().__init__()
         self._entries = entries
-        self.selector = selector
+        self._selector = selector
+        self.is_higher_better = is_higher_better
 
     @property
     def entries(self):
         return self._entries
 
-    # Get the most recent entry
     @property
-    def current(self) -> float:
-        return self.selector(self.entries[-1])
+    def current(self) -> R:
+        return self._selector(self.entries[-1])
+
+
+class SimpleMetric(BaseMetric[float]):
+    def __init__(
+        self,
+        entries: list[L],
+        selector: Callable[[L], float],
+        is_higher_better: bool = True,
+    ):
+        super().__init__(entries, selector, is_higher_better)
 
     # Return average for the period
     @property
     def avg(self) -> float:
-        return average_by(self.entries, self.selector)
+        return average_by(self.entries, self._selector)
 
     @property
     def weekly_avg(self) -> float:
-        return average_by(self.entries[-7:], self.selector)
+        return average_by(self.entries[-7:], self._selector)
 
     @property
     def diff_to_avg(self) -> float:
@@ -66,7 +80,7 @@ class SimpleMetric(ABC):
 class RhrMetrics(SimpleMetric):
     def __init__(self, rhr_data: GarminRhrResponse):
         entries = sorted(rhr_data.entries, key=lambda x: x.calendarDate)
-        super().__init__(entries, lambda x: x.values.restingHR)
+        super().__init__(entries, lambda x: x.values.restingHR, is_higher_better=False)
 
 
 class BodyBatteryMetrics(SimpleMetric):
@@ -80,7 +94,9 @@ class BodyBatteryMetrics(SimpleMetric):
 class StressMetrics(SimpleMetric):
     def __init__(self, stress_data: GarminStressResponse):
         entries = sorted(stress_data.entries, key=lambda x: x.calendarDate)
-        super().__init__(entries, lambda x: x.values.overallStressLevel)
+        super().__init__(
+            entries, lambda x: x.values.overallStressLevel, is_higher_better=False
+        )
 
 
 class SleepScoreMetrics(SimpleMetric):
@@ -89,19 +105,14 @@ class SleepScoreMetrics(SimpleMetric):
         super().__init__(entries, lambda x: x.value)
 
 
-class SleepMetrics:  # XXX: // SleepSummary
+class SleepMetrics(BaseMetric[timedelta]):  # XXX: // SleepSummary
     def __init__(self, sleep_data: GarminSleepResponse):
+        super().__init__(
+            sleep_data.entries, lambda x: timedelta(seconds=x.values.totalSleepSeconds)
+        )
+
         # Ensure sorted by date such that the most recent entry is last
         self._entries = sorted(sleep_data.entries, key=lambda x: x.calendarDate)
-
-    @property
-    def entries(self):
-        return self._entries
-
-    @property
-    # Get the most recent sleep entry
-    def current(self) -> timedelta:
-        return timedelta(seconds=self._entries[-1].values.totalSleepSeconds)
 
     @property
     # Returns average sleep time for the sleep data period
@@ -130,14 +141,13 @@ class SleepMetrics:  # XXX: // SleepSummary
         return self.current - timedelta(hours=hour)
 
 
-class HrvMetrics:
+class HrvMetrics(BaseMetric[Optional[int]]):
     def __init__(self, hrv_data: GarminHrvResponse) -> None:
         self._entries = sorted(hrv_data.entries, key=lambda x: x.calendarDate)
-
-    @property
-    # Returns none if no hrv registered for the night
-    def current(self) -> int | None:
-        return self._entries[-1].lastNightAvg
+        super().__init__(
+            self._entries,
+            lambda x: x.lastNightAvg if x.lastNightAvg else None,
+        )
 
     @property
     # Get the most recent registered weekly hrv average

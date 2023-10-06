@@ -1856,6 +1856,24 @@ pure-eval = "*"
 tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
+name = "table2ascii"
+version = "1.1.2"
+description = "Convert 2D Python lists into Unicode/ASCII tables"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "table2ascii-1.1.2.tar.gz", hash = "sha256:a7fe37550982827f6106a542c966d6b48ff7b94dcee7c248191d1fff78f874f6"},
+]
+
+[package.dependencies]
+wcwidth = "<1"
+
+[package.extras]
+dev = ["mypy (>=0.982,<2)", "pre-commit (>=2.0.0,<4)", "pyright (>=1.0.0,<2)", "pytest (>=6.0.0,<8)", "slotscheck (>=0.1.0,<1)", "taskipy (>=1.0.0,<2)", "tox (>=3.0.0,<5)"]
+docs = ["enum-tools", "sphinx", "sphinx-autobuild", "sphinx-book-theme (==0.3.3)", "sphinx-toolbox", "sphinxcontrib_trio", "sphinxext-opengraph"]
+
+[[package]]
 name = "tornado"
 version = "6.3.3"
 description = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
@@ -1956,7 +1974,7 @@ zstd = ["zstandard (>=0.18.0)"]
 name = "wcwidth"
 version = "0.2.8"
 description = "Measures the displayed width of unicode strings in a terminal"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -1967,4 +1985,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "e09ea57a85ed73d80c769030a3e77649dd0037e473a08b09f8fdfff9503c89d5"
+content-hash = "15c29fc62dc95f1b86a884b11515f482648839e18537551e6fb547be2944e7da"
