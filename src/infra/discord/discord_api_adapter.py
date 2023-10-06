@@ -6,21 +6,22 @@ from src.presentation.discord_messages import (
     DiscordErrorMessage,
     DiscordExceptionMessage,
     DiscordHealthSummaryMessage,
+    MessageFormat,
 )
 
 
 # Adapts application requests to discord requests (DTOs)
 class DiscordApiAdapter:
-    def __init__(
-        self,
-        discord_client: DiscordApiClient,
-    ):
+    def __init__(self, discord_client: DiscordApiClient, message_format: MessageFormat):
         super().__init__()
         self._client = discord_client
+        self._message_format = message_format
 
     # Send health summary to discord webhook
     def send_health_summary(self, healthSummary: HealthSummary) -> None:
-        discord_message = DiscordHealthSummaryMessage(healthSummary)
+        discord_message = DiscordHealthSummaryMessage(
+            healthSummary, self._message_format
+        )
         self._client.send_message(discord_message)
 
     def send_image(self, image: BytesIO, name: str) -> None:

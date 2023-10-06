@@ -43,7 +43,7 @@ def resolve(app_config: Config) -> Dependencies:
         app_config.webhook_url, time_provider, service_name="garmin-connect-bot"
     )
 
-    discord_api_adapter = DiscordApiAdapter(discord_client)
+    discord_api_adapter = DiscordApiAdapter(discord_client, app_config.message_format)
 
     summary_ready_handler = HealthSummaryReadyEventHandler(discord_api_adapter)
 
@@ -55,7 +55,9 @@ def resolve(app_config: Config) -> Dependencies:
             time_provider,
             service_name="garmin-health-bot",
         )
-        discord_error_adapter = DiscordApiAdapter(discord_error_client)
+        discord_error_adapter = DiscordApiAdapter(
+            discord_error_client, app_config.message_format
+        )
         error_handler = ExceptionOccurredEventHandler(discord_error_adapter)
 
     scheduler = GarminFetchDataScheduler(

@@ -33,15 +33,13 @@ class DiscordExceptionMessage(DiscordEmbed):
 
 
 class MessageFormat(enum.Enum):
-    LINES = 1
-    TABLE = 2
+    LINES = "lines"
+    TABLE = "table"
 
 
 # Health summary discord dto/message
 class DiscordHealthSummaryMessage(DiscordEmbed):
-    def __init__(
-        self, summary: HealthSummary, format: MessageFormat = MessageFormat.LINES
-    ):
+    def __init__(self, summary: HealthSummary, format: MessageFormat):
         title = f"Garmin Health Metrics, {summary.date.strftime('%d-%m-%Y')}"
         msg = ""
 
@@ -56,10 +54,11 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
 
         view_models = [sleep, sleep_score, rhr, hrv, bb, stress]
 
-        if format == MessageFormat.LINES:
-            msg = _create_lines(msg, view_models)
-        else:
-            msg = _create_table(msg, view_models)
+        match format:
+            case MessageFormat.LINES:
+                msg = _create_lines(msg, view_models)
+            case MessageFormat.TABLE:
+                msg = _create_table(msg, view_models)
 
         super().__init__(
             title=title,

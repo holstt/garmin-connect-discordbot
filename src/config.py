@@ -10,6 +10,7 @@ from pytz import BaseTzInfo
 from tzlocal import get_localzone
 
 from src import utils
+from src.presentation.discord_messages import MessageFormat
 from src.presentation.login_prompt import LoginPrompt
 
 logger = logging.getLogger(__name__)
@@ -27,6 +28,15 @@ class Config(NamedTuple):
     time_zone: ZoneInfo
     session_file_path: Optional[Path]
     webhook_error_url: Optional[str]  # XXX: Should be type DiscordUrl
+    message_format: MessageFormat
+
+
+def get_message_formt() -> MessageFormat:
+    format_str = os.environ.get("MESSAGE_FORMAT")
+    if not format_str:
+        return MessageFormat.LINES
+
+    return MessageFormat(format_str)
 
 
 def get_config() -> Config:
@@ -55,6 +65,7 @@ def get_config() -> Config:
         time_zone,
         session_dir,
         webhook_error_url,
+        message_format=get_message_formt(),
     )
 
 
