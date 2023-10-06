@@ -6,6 +6,9 @@ from pathlib import Path
 from typing import NamedTuple, Optional
 from zoneinfo import ZoneInfo
 
+from pytz import BaseTzInfo
+from tzlocal import get_localzone
+
 from src import utils
 from src.presentation.login_prompt import LoginPrompt
 
@@ -21,6 +24,7 @@ class Config(NamedTuple):
     notify_time: time
     email: str
     password: str
+    time_zone: ZoneInfo
     session_file_path: Optional[Path]
     webhook_error_url: Optional[str]  # XXX: Should be type DiscordUrl
 
@@ -32,10 +36,8 @@ def get_config() -> Config:
     webhook_url = _get_env_variable_or_fail("WEBHOOK_URL")
 
     notify_time_of_day_str = _get_env_variable_or_fail("NOTIFY_TIME_OF_DAY")
-    time_zone_str = _get_env_variable_or_fail(
-        "TIME_ZONE"
-    )  # TODO: Should be part of confgi
-    notify_time = _get_notify_time(notify_time_of_day_str, time_zone_str)
+    time_zone = _get_time_zone("TIME_ZONE")
+    notify_time = _get_notify_time(notify_time_of_day_str, time_zone)
 
     # Get optionals
     session_dir: Optional[Path] = _get_session_dir_if_needed(
@@ -50,9 +52,21 @@ def get_config() -> Config:
         notify_time,
         email,
         password,
+        time_zone,
         session_dir,
         webhook_error_url,
     )
+
+
+def _get_time_zone(env_name: str) -> ZoneInfo:
+    value = os.environ.get(env_name)
+    if not value:
+        local_tz: ZoneInfo = get_localzone()  # type: ignore
+        logger.info(f"No time zone provided. Defaulting to local time zone: {local_tz}")
+
+        return local_tz
+
+    return ZoneInfo(value)
 
 
 def _get_env_variable_or_fail(name: str) -> str:
@@ -117,12 +131,11 @@ def _get_credentials(email_env_name: str, password_env_name: str):
 
 
 # Parses the time and converts it to UTC
-def _get_notify_time(time_str: str, time_zone: str) -> time:
+def _get_notify_time(time_str: str, time_zone: ZoneInfo) -> time:
     time_obj = time.fromisoformat(time_str)
-    local_tz = ZoneInfo(time_zone)
 
     # Create a date in the specified time zone
-    local_dt = datetime.now(tz=local_tz).replace(
+    local_dt = datetime.now(tz=time_zone).replace(
         hour=time_obj.hour,
         minute=time_obj.minute,
         second=time_obj.second,
