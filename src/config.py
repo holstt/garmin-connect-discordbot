@@ -32,7 +32,7 @@ class Config(BaseSettings):
 
     webhook_url: str  # XXX: Should be type DiscordUrl
     credentials: Credentials = Field(default_factory=Credentials)
-    time_zone: ZoneInfo = Field(default_factory=get_localzone)
+    time_zone: str = Field(default_factory=lambda: get_localzone().key)  # type: ignore
     notify_time_of_day: time
     session_file_path: Optional[Path] = None
     webhook_error_url: Optional[str] = None  # XXX: Should be type DiscordUrl
@@ -41,7 +41,7 @@ class Config(BaseSettings):
     # Create notify time based on time zone
     @validator("notify_time_of_day")
     def create_notify_time(cls, notify_time: time, values: dict[str, Any]) -> time:
-        time_zone: ZoneInfo = values["time_zone"]  # type: ignore
+        time_zone: str = values["time_zone"]  # type: ignore
 
         _get_notify_time(notify_time, time_zone)
         return notify_time
@@ -59,7 +59,8 @@ class Config(BaseSettings):
 
 
 # Parses the time and converts it to UTC
-def _get_notify_time(time_obj: time, time_zone: ZoneInfo) -> time:
+def _get_notify_time(time_obj: time, time_zone_str: str) -> time:
+    time_zone = ZoneInfo(time_zone_str)
     # Create a date in the specified time zone
     local_dt = datetime.now(tz=time_zone).replace(
         hour=time_obj.hour,
