@@ -26,7 +26,7 @@ def main(app_config: Config) -> None:
         # Add job and start scheduler
         scheduler = dependencies.scheduler
         scheduler.add_garmin_fetch_summary_job(
-            app_config.notify_time, job_name="garmin_weekly_summary_job"
+            app_config.notify_time_of_day, job_name="garmin_weekly_summary_job"
         )
         scheduler.run()
     except Exception as e:
@@ -43,7 +43,7 @@ if __name__ == "__main__":
             module_logger_name=__name__, base_log_level=logging.DEBUG
         )
         app_config = config.get_config()
-        logging_helper.add_password_filter(app_config.password)
+        logging_helper.add_password_filter(app_config.credentials.password)
         main(app_config)
     except (KeyboardInterrupt, SystemExit):
         pass

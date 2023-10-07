@@ -16,6 +16,7 @@ hypothesis = "^6.72.1"
 pydantic = "^2.4.2"
 matplotlib = "^3.8.0"
 table2ascii = "^1.1.2"
+pydantic-settings = "^2.0.3"
 
 
 [tool.poetry.group.dev.dependencies]

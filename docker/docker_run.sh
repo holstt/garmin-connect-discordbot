@@ -11,7 +11,6 @@ ENV_PATH=$2
 USERNAME=$3
 GROUPNAME=$4
 
-
 # Get ids of the docker user
 DOCKER_USER_ID=$(id -u "$USERNAME")
 DOCKER_GROUP_ID=$(getent group "$GROUPNAME" | cut -d: -f3)

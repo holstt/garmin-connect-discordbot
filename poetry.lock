@@ -1512,6 +1512,22 @@ files = [
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
+name = "pydantic-settings"
+version = "2.0.3"
+description = "Settings management using Pydantic"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pydantic_settings-2.0.3-py3-none-any.whl", hash = "sha256:ddd907b066622bd67603b75e2ff791875540dc485b7307c4fffc015719da8625"},
+    {file = "pydantic_settings-2.0.3.tar.gz", hash = "sha256:962dc3672495aad6ae96a4390fac7e593591e144625e5112d359f8f67fb75945"},
+]
+
+[package.dependencies]
+pydantic = ">=2.0.1"
+python-dotenv = ">=0.21.0"
+
+[[package]]
 name = "pygments"
 version = "2.16.1"
 description = "Pygments is a syntax highlighting package written in Python."
@@ -1985,4 +2001,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "15c29fc62dc95f1b86a884b11515f482648839e18537551e6fb547be2944e7da"
+content-hash = "5fc690e31e3f67e75c55727e37bdde0b2a9add4e0489bfc4aa273d5dde91d2b1"
