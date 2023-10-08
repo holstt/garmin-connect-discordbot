@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 class HealthSummaryReadyEventHandler:
     def __init__(self, discord_service: DiscordApiAdapter):
+        super().__init__()
         self._service = discord_service
 
     # When a health summary is ready, send it to discord
@@ -23,6 +24,8 @@ class HealthSummaryReadyEventHandler:
 
 class ExceptionOccurredEventHandler:
     def __init__(self, discord_service: DiscordApiAdapter):
+        super().__init__()
+
         self.discord_service = discord_service
 
     # Send exception to discord

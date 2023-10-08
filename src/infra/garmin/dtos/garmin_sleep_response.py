@@ -1,9 +1,14 @@
+import stat
 from dataclasses import dataclass
 from datetime import date
 from typing import Any
 
 from pydantic import BaseModel, TypeAdapter
 
+from src.infra.garmin.dtos.garmin_response import (
+    GarminResponseDto,
+    GarminResponseEntryDto,
+)
 from src.infra.garmin.garmin_api_client import JsonResponseType
 
 
@@ -15,17 +20,13 @@ class Values(BaseModel):
     REMSleepSeconds: int
 
 
-class SleepEntry(BaseModel):
-    calendarDate: date
+class SleepEntry(BaseModel, GarminResponseEntryDto):
     values: Values
 
 
 @dataclass
-class GarminSleepResponse:
-    entries: list[SleepEntry]
-
+class GarminSleepResponse(GarminResponseDto[SleepEntry]):
     @staticmethod
     def from_json(json: JsonResponseType) -> "GarminSleepResponse":
-        adapter = TypeAdapter(list[SleepEntry])
-        entries = adapter.validate_python(json)
+        entries = GarminSleepResponse._from_json_list(json, SleepEntry)
         return GarminSleepResponse(entries)

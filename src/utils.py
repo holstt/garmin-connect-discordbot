@@ -3,7 +3,7 @@ import json
 import logging
 from datetime import date
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Optional, TypeVar
 
 from dotenv import load_dotenv
 
@@ -65,3 +65,15 @@ def _get_env_path(path_str: Optional[str]) -> Path | None:
 
         # No custom and no default .env file found
         return None
+
+
+T = TypeVar("T")
+
+
+# A generic function that returns target type from a list of items or fails if not found
+def get_concrete_type(items: list[Any], type: type[T]) -> T:
+    for item in items:
+        if isinstance(item, type):
+            return item
+
+    raise ValueError(f"Could not find item of type {type} in list")

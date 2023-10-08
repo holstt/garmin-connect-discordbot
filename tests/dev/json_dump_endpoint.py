@@ -25,9 +25,11 @@ period = DatePeriod.from_last_4_weeks(time_provider.now().date())
 
 logging_helper.setup_logging(module_logger_name=__name__, base_log_level=logging.DEBUG)
 app_config = config.get_config()
-logging_helper.add_password_filter(app_config.password)
+logging_helper.add_password_filter(app_config.credentials.password)
 
-garmin_base_client = Garmin(app_config.email, app_config.password)
+garmin_base_client = Garmin(
+    app_config.credentials.email, app_config.credentials.password
+)
 client = GarminApiClient(
     garmin_base_client, time_provider, app_config.session_file_path
 )

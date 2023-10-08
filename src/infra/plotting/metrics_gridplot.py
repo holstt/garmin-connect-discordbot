@@ -10,45 +10,17 @@ from matplotlib.colors import LinearSegmentedColormap
 import src.infra.garmin.dtos as dtos
 from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
 from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
+from src.infra.garmin.dtos.garmin_response import (
+    GarminResponseDto,
+    GarminResponseEntryDto,
+)
 from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse
 from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
 from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
 from src.infra.garmin.dtos.garmin_steps_response import GarminStepsResponse
 from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
 
-# type_to_color = {
-#     dtos.GarminSleepResponse: "red",
-#     dtos.GarminSleepScoreResponse: "blue",
-#     dtos.GarminBbResponse: "green",
-#     dtos.GarminRhrResponse: "yellow",
-#     dtos.GarminStepsResponse: "purple",
-#     dtos.GarminStressResponse: "orange",
-#     dtos.GarminHrvResponse: "pink",
-# }
-
-
 SECONDS_IN_HOUR = 3600
-
-
-class MetricsData(NamedTuple):
-    sleep: dtos.GarminSleepResponse
-    sleep_score: dtos.GarminSleepScoreResponse
-    bb: dtos.GarminBbResponse
-    rhr: dtos.GarminRhrResponse
-    # steps: dtos.GarminStepsResponse
-    stress: dtos.GarminStressResponse
-    hrv: dtos.GarminHrvResponse
-
-    def get_last_n(self, n: int):
-        return MetricsData(
-            GarminSleepResponse(self.sleep.entries[-n:]),
-            GarminSleepScoreResponse(self.sleep_score.entries[-n:]),
-            GarminBbResponse(self.bb.entries[-n:]),
-            GarminRhrResponse(self.rhr.entries[-n:]),
-            # GarminStepsResponse(self.steps.entries[-n:]),
-            GarminStressResponse(self.stress.entries[-n:]),
-            GarminHrvResponse(hrvSummaries=self.hrv.entries[-n:], userProfilePk=0),
-        )
 
 
 class MetricPlot(NamedTuple):
@@ -58,12 +30,12 @@ class MetricPlot(NamedTuple):
 
 
 # Creates subplot for each metric in a single figure
-def plot(metrics_data: MetricsData):
-    plot_data = _transform(metrics_data)
-
+def plot(metrics_data: list[GarminResponseDto[GarminResponseEntryDto]]):
     # Just get the dates from one of the metrics (they should all be the same)
-    dates = [entry.calendarDate for entry in metrics_data.bb.entries]
+    dates = [entry.calendarDate for entry in metrics_data[0].entries]
     weekdays = [date.strftime("%a") for date in dates]
+
+    plot_data = _transform(metrics_data)
 
     fig = plt.figure(figsize=(11, 13))
 
@@ -119,55 +91,65 @@ def _add_subplot(
     ax.grid(alpha=0.50)
 
 
-def _transform(metrics_data: MetricsData):
-    plot_data = [
-        # MetricPlot(
-        #     name="Steps",
-        #     color="#1f77b4",
-        #     values=[entry.totalSteps for entry in metrics_data.steps.entries],
-        # ),
-        # MetricObj(name='Intensity Minutes', color='#ff7f0e', range=(0, 120)),
-        MetricPlot(
-            name="Sleep Duration",
-            color="#2ca02c",
-            values=[
-                entry.values.totalSleepSeconds / SECONDS_IN_HOUR
-                for entry in metrics_data.sleep.entries
-            ],
-        ),
-        MetricPlot(
-            name="Sleep Score",
-            color="#9467bd",
-            values=[entry.value for entry in metrics_data.sleep_score.entries],
-        ),
-        MetricPlot(
-            name="Resting Heart Rate",
-            color="#d62728",
-            values=[entry.values.restingHR for entry in metrics_data.rhr.entries],
-        ),
-        MetricPlot(
-            name="Stress Level",
-            color="#8c564b",
-            values=[
-                entry.values.overallStressLevel for entry in metrics_data.stress.entries
-            ],
-        ),
-        MetricPlot(
-            name="Body Battery",
-            color="#e377c2",
-            values=[
-                max([val for (time, val) in entry.bodyBatteryValuesArray])
-                for entry in metrics_data.bb.entries
-            ],
-        ),
-        MetricPlot(
-            name="HRV",
-            color="#7f7f7f",
-            values=[entry.lastNightAvg for entry in metrics_data.hrv.entries],
-        ),
-    ]
+def _transform(metrics_data: list[GarminResponseDto[GarminResponseEntryDto]]):
+    return [get_plot_data(metric) for metric in metrics_data]
 
-    return plot_data
+
+# TODO: Move representation of each metric to setup/plugin pattern
+def get_plot_data(metric: GarminResponseDto[GarminResponseEntryDto]):
+    match metric:
+        case GarminSleepResponse(entries):
+            return MetricPlot(
+                name="Sleep Duration",
+                color="#2ca02c",
+                values=[
+                    entry.values.totalSleepSeconds / SECONDS_IN_HOUR
+                    for entry in entries
+                ],
+            )
+        case GarminSleepScoreResponse(entries):
+            return MetricPlot(
+                name="Sleep Score",
+                color="#9467bd",
+                values=[entry.value for entry in entries],
+            )
+        case GarminRhrResponse(entries):
+            return MetricPlot(
+                name="Resting Heart Rate",
+                color="#d62728",
+                values=[entry.values.restingHR for entry in entries],
+            )
+        case GarminStressResponse(entries):
+            return MetricPlot(
+                name="Stress Level",
+                color="#8c564b",
+                values=[entry.values.overallStressLevel for entry in entries],
+            )
+        case GarminBbResponse(entries):
+            return MetricPlot(
+                name="Body Battery",
+                color="#e377c2",
+                values=[
+                    max([val for (time, val) in entry.bodyBatteryValuesArray])
+                    for entry in entries
+                ],
+            )
+        case GarminHrvResponse(entries):
+            return MetricPlot(
+                name="HRV",
+                color="#7f7f7f",
+                values=[entry.lastNightAvg for entry in entries],
+            )
+        case GarminStepsResponse(entries):
+            return MetricPlot(
+                name="Steps",
+                color="#1f77b4",
+                values=[entry.totalSteps for entry in entries],
+            )
+        # TODO:
+        # MetricObj(name='Intensity Minutes', color='#ff7f0e', range=(0, 120)),
+        case _:
+            raise ValueError(f"Unknown metric: {metric}")
 
 
 # XXX: Not used. Solid colors seem to be better?

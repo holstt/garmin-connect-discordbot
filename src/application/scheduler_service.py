@@ -32,6 +32,7 @@ class GarminFetchDataScheduler:
         summary_ready_event: Callable[[HealthSummary], None],
         exception_event: Optional[Callable[[Exception, str], None]],
     ):
+        super().__init__()
         self._garmin_service = garmin_service
         self._time_provider = time_provider
         self._summary_ready_event = summary_ready_event
@@ -62,7 +63,7 @@ class GarminFetchDataScheduler:
             )  # Small delay to allow scheduler to start
         else:
             logger.info(
-                f"Current '{current_time.time()}' has not passed notify time {fetch_start_time} yet, scheduling job as normal"
+                f"Current time '{current_time.time()}' has not passed notify time {fetch_start_time} yet, scheduling job as normal"
             )
             next_run_time = None
 
@@ -103,7 +104,7 @@ class GarminFetchDataScheduler:
             )
             self._reschedule_job(fetch_start_time, job_id, delay_until_retry)
 
-    # Returns value determines if job was successful
+    # Return value determines if job was successful
     def _execute_garmin_fetch_task(self, week_end: date) -> bool:
         logger.info("Started daily garmin fetch job")
 

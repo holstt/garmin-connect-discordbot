@@ -9,7 +9,7 @@ from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse
 from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
 from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
 from src.infra.garmin.dtos.garmin_steps_response import GarminStepsResponse
-from src.infra.garmin.dtos.garmin_stress_response import GarminDto, GarminStressResponse
+from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
 from src.infra.garmin.garmin_api_client import GarminApiClient, GarminEndpoint
 
 logger = logging.getLogger(__name__)
@@ -29,6 +29,7 @@ dto_to_endpoint = {
 # Adapts the GarminApiClient to return DTOs instead of json dict
 class GarminApiAdapter:
     def __init__(self, api_client: GarminApiClient) -> None:
+        super().__init__()
         self._api_client = api_client
 
     def get_daily_rhr(self, period: DatePeriod) -> Optional[GarminRhrResponse]:

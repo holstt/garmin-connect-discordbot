@@ -1512,6 +1512,22 @@ files = [
 typing-extensions = ">=4.6.0,<4.7.0 || >4.7.0"
 
 [[package]]
+name = "pydantic-settings"
+version = "2.0.3"
+description = "Settings management using Pydantic"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "pydantic_settings-2.0.3-py3-none-any.whl", hash = "sha256:ddd907b066622bd67603b75e2ff791875540dc485b7307c4fffc015719da8625"},
+    {file = "pydantic_settings-2.0.3.tar.gz", hash = "sha256:962dc3672495aad6ae96a4390fac7e593591e144625e5112d359f8f67fb75945"},
+]
+
+[package.dependencies]
+pydantic = ">=2.0.1"
+python-dotenv = ">=0.21.0"
+
+[[package]]
 name = "pygments"
 version = "2.16.1"
 description = "Pygments is a syntax highlighting package written in Python."
@@ -1856,6 +1872,24 @@ pure-eval = "*"
 tests = ["cython", "littleutils", "pygments", "pytest", "typeguard"]
 
 [[package]]
+name = "table2ascii"
+version = "1.1.2"
+description = "Convert 2D Python lists into Unicode/ASCII tables"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+files = [
+    {file = "table2ascii-1.1.2.tar.gz", hash = "sha256:a7fe37550982827f6106a542c966d6b48ff7b94dcee7c248191d1fff78f874f6"},
+]
+
+[package.dependencies]
+wcwidth = "<1"
+
+[package.extras]
+dev = ["mypy (>=0.982,<2)", "pre-commit (>=2.0.0,<4)", "pyright (>=1.0.0,<2)", "pytest (>=6.0.0,<8)", "slotscheck (>=0.1.0,<1)", "taskipy (>=1.0.0,<2)", "tox (>=3.0.0,<5)"]
+docs = ["enum-tools", "sphinx", "sphinx-autobuild", "sphinx-book-theme (==0.3.3)", "sphinx-toolbox", "sphinxcontrib_trio", "sphinxext-opengraph"]
+
+[[package]]
 name = "tornado"
 version = "6.3.3"
 description = "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."
@@ -1956,7 +1990,7 @@ zstd = ["zstandard (>=0.18.0)"]
 name = "wcwidth"
 version = "0.2.8"
 description = "Measures the displayed width of unicode strings in a terminal"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -1967,4 +2001,4 @@ files = [
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "e09ea57a85ed73d80c769030a3e77649dd0037e473a08b09f8fdfff9503c89d5"
+content-hash = "5fc690e31e3f67e75c55727e37bdde0b2a9add4e0489bfc4aa273d5dde91d2b1"

@@ -4,6 +4,10 @@ from typing import Any
 
 from pydantic import BaseModel, TypeAdapter
 
+from src.infra.garmin.dtos.garmin_response import (
+    GarminResponseDto,
+    GarminResponseEntryDto,
+)
 from src.infra.garmin.garmin_api_client import JsonResponseType
 
 
@@ -13,17 +17,14 @@ class RhrValues(BaseModel):
     wellnessMinAvgHR: int
 
 
-class RhrEntry(BaseModel):
+class RhrEntry(BaseModel, GarminResponseEntryDto):
     calendarDate: date
     values: RhrValues
 
 
 @dataclass
-class GarminRhrResponse:
-    entries: list[RhrEntry]
-
+class GarminRhrResponse(GarminResponseDto[RhrEntry]):
     @staticmethod
     def from_json(json: JsonResponseType) -> "GarminRhrResponse":
-        adapter = TypeAdapter(list[RhrEntry])
-        entries = adapter.validate_python(json)
+        entries = GarminRhrResponse._from_json_list(json, RhrEntry)
         return GarminRhrResponse(entries)

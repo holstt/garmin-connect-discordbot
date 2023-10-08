@@ -3,11 +3,16 @@ import os
 import time
 from datetime import datetime, time
 from pathlib import Path
-from typing import NamedTuple, Optional
+from typing import Any, Optional
 from zoneinfo import ZoneInfo
 
+from pydantic import Field, validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from tzlocal import get_localzone
+
+import src.presentation.login_prompt as login
 from src import utils
-from src.presentation.login_prompt import LoginPrompt
+from src.presentation.discord_messages import MessageFormat
 
 logger = logging.getLogger(__name__)
 
@@ -16,66 +21,67 @@ class ConfigError(Exception):
     pass
 
 
-class Config(NamedTuple):
+class Credentials(BaseSettings):
+    email: str = Field(default_factory=login.prompt_email)
+    password: str = Field(default_factory=login.prompt_password)
+
+
+# Reads from environment variables
+class Config(BaseSettings):
+    model_config = SettingsConfigDict(env_nested_delimiter="__")
+
     webhook_url: str  # XXX: Should be type DiscordUrl
-    notify_time: time
-    email: str
-    password: str
-    session_file_path: Optional[Path]
-    webhook_error_url: Optional[str]  # XXX: Should be type DiscordUrl
+    credentials: Credentials = Field(default_factory=Credentials)
+    time_zone: str = Field(default_factory=lambda: get_localzone().key)  # type: ignore
+    notify_time_of_day: time
+    session_file_path: Optional[Path] = None
+    webhook_error_url: Optional[str] = None  # XXX: Should be type DiscordUrl
+    message_format: MessageFormat
+
+    # Create notify time based on time zone
+    @validator("notify_time_of_day")
+    def create_notify_time(cls, notify_time: time, values: dict[str, Any]) -> time:
+        time_zone: str = values["time_zone"]  # type: ignore
+
+        notify_time = _get_notify_time(notify_time, time_zone)
+        return notify_time
+
+    @validator("session_file_path")
+    def create_session_file_path(
+        cls, session_file_path: Optional[Path], values: dict[str, Any]
+    ) -> Path | None:
+        if not session_file_path:
+            logger.warn("No session directory path provided.")
+            return None
+        session_dir = Path(session_file_path).resolve()
+        _ensure_dir_created_with_permissions(session_dir)
+        return session_file_path
+
+
+# Parses the time and converts it to UTC
+def _get_notify_time(time_obj: time, time_zone_str: str) -> time:
+    time_zone = ZoneInfo(time_zone_str)
+    # Create a date in the specified time zone
+    local_dt = datetime.now(tz=time_zone).replace(
+        hour=time_obj.hour,
+        minute=time_obj.minute,
+        second=time_obj.second,
+        microsecond=time_obj.microsecond,
+    )
+
+    # Convert the date to UTC and extract the time
+    utc_dt = local_dt.astimezone(ZoneInfo("UTC"))
+    return utc_dt.time()
 
 
 def get_config() -> Config:
     utils.load_env()
 
-    # Get required
-    webhook_url = _get_env_variable_or_fail("WEBHOOK_URL")
-
-    notify_time_of_day_str = _get_env_variable_or_fail("NOTIFY_TIME_OF_DAY")
-    time_zone_str = _get_env_variable_or_fail(
-        "TIME_ZONE"
-    )  # TODO: Should be part of confgi
-    notify_time = _get_notify_time(notify_time_of_day_str, time_zone_str)
-
-    # Get optionals
-    session_dir: Optional[Path] = _get_session_dir_if_needed(
-        session_dir_env_name="DATA_DIRECTORY_PATH"
-    )
-
-    email, password = _get_credentials("GARMIN_EMAIL", "GARMIN_PASSWORD")
-    webhook_error_url: Optional[str] = os.environ.get("WEBHOOK_ERROR_URL")
-
-    return Config(
-        webhook_url,
-        notify_time,
-        email,
-        password,
-        session_dir,
-        webhook_error_url,
-    )
+    config = Config()  # type: ignore
+    return config
 
 
-def _get_env_variable_or_fail(name: str) -> str:
-    value = os.environ.get(name)
-    if not value:
-        raise ValueError(
-            f"The environment variable '{name}' is empty or not set. Please provide a value."
-        )
-    return value
-
-
-def _get_session_dir_if_needed(session_dir_env_name: str) -> Optional[Path]:
-    path_value = os.environ.get(session_dir_env_name)
-
-    if not path_value:
-        logger.info("No session directory path provided.")
-        return None
-
-    session_dir = Path(path_value).resolve()
-    _ensure_dir_created_with_permissions(session_dir)
-    return session_dir
-
-
+# TODO: Generalize and move to infra.filesystem_utils
 def _ensure_dir_created_with_permissions(session_dir: Path):
     # Create the directory if it does not exist.
     if not session_dir.exists():
@@ -103,35 +109,6 @@ def _ensure_dir_created_with_permissions(session_dir: Path):
             )
 
         logger.info(f"Data directory exists and is accessible: {session_dir}")
-
-
-# Get from env or prompt for credentials
-def _get_credentials(email_env_name: str, password_env_name: str):
-    email: Optional[str] = os.environ.get(email_env_name)
-    password: Optional[str] = os.environ.get(password_env_name)
-
-    if not email or not password:
-        logger.info("No credentials provided. Prompting for credentials.")
-        email, password = LoginPrompt().show()
-    return email, password
-
-
-# Parses the time and converts it to UTC
-def _get_notify_time(time_str: str, time_zone: str) -> time:
-    time_obj = time.fromisoformat(time_str)
-    local_tz = ZoneInfo(time_zone)
-
-    # Create a date in the specified time zone
-    local_dt = datetime.now(tz=local_tz).replace(
-        hour=time_obj.hour,
-        minute=time_obj.minute,
-        second=time_obj.second,
-        microsecond=time_obj.microsecond,
-    )
-
-    # Convert the date to UTC and extract the time
-    utc_dt = local_dt.astimezone(ZoneInfo("UTC"))
-    return utc_dt.time()
 
 
 # XXX: Old session loading in json format. Ensure logic has been moved to api client.

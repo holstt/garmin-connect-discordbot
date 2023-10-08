@@ -8,9 +8,9 @@
 
 Discord bot providing a daily summary of your Garmin Connect health metrics
 
-<img src="docs/discord_message_example.png" width=80%>
+<img src="docs/discord_message_example_table.png" width=80%>
 
-*NB: Synthetic data generated for demonstration purposes - may contain inconsistencies*
+_NB: Synthetic data generated for demonstration purposes - may contain inconsistencies_
 
 ## Features
 
@@ -23,10 +23,11 @@ Discord bot providing a daily summary of your Garmin Connect health metrics
 -   Docker support: Easy deployment using Docker Compose including scripts for a more secure setup in production environments
 
 **TODO:**
-- [ ] Configure which metrics to include in the daily update. Not all watches support all metrics
-- [ ] Add and vizualize activity e.g. using intensity minutes, activity frequency/duration etc.
-- [ ] End of week summary with activity overview, weekly distance, frequency for each activity etc. Could also include metrics and be an alternative to the daily summary to reduce notifications
-- [ ] Data analysis: Provide insights into trends and correlations between metrics
+
+-   [ ] Configure which metrics to include in the daily update. Not all watches support all metrics
+-   [ ] Add and vizualize activity e.g. using intensity minutes, activity frequency/duration etc.
+-   [ ] End of week summary with activity overview, weekly distance, frequency for each activity etc. Could also include metrics and be an alternative to the daily summary to reduce notifications
+-   [ ] Data analysis: Provide insights into trends and correlations between metrics
 
 ## Requirements
 
@@ -34,8 +35,6 @@ Discord bot providing a daily summary of your Garmin Connect health metrics
 -   A [Discord webhook URL](https://support.discord.com/hc/en-us/articles/228383668-Intro-to-Webhooks) (interaction with the bot is not relevant with current feature set, so we don't need to create a bot account)
 -   (Only if running locally) The [Poetry package manager](https://python-poetry.org/docs/#installation)
 -   (Only if running with Docker) [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
-
-
 
 ## Getting Started
 
@@ -48,40 +47,18 @@ cd garmin-health-discordbot
 
 **2. Set up configuration**
 
-The bot is configured using environment variables, which can be specified in a `.env` file or set directly in the environment.
+The bot is configured using environment variables. Defining environment variables using a `.env` file is supported - place it in the root of the project directory or provide a custom path using the `-e` flag (see further below). See `.env.example` for a template (remember to rename it to `.env`).
 
-`./env.example` provides an example of the required format. Rename the file to `.env` and edit the values as needed:
-
-```properties
-# URL for the Discord webhook that should receive the daily health summary
-WEBHOOK_URL=https://discordapp.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz
-
-# OPTIONAL: Discord webhook URL that should receive an error message in case of any unhandled exceptions (can be same as above)
-# This includes any unhandled exceptions caught by the scheduler
-# If not provided, no error notifications will be sent
-WEBHOOK_ERROR_URL=https://discordapp.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz
-
-# The time in format HH:MM when the daily health summary should be fetched.
-# If data for today is not available yet, the program will schedule a retry at a
-# later time until the data becomes available
-NOTIFY_TIME_OF_DAY=06:00
-
-# The IANA time zone in which the NOTIFY_AT_HOUR is specified.
-# See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-TIME_ZONE=Europe/Berlin
-
-# OPTIONAL: Garmin Connect credentials. If not provided, you will be prompted to
-# enter them at program startup.
-GARMIN_EMAIL=my@email.com
-GARMIN_PASSWORD=mypassword
-
-# OPTIONAL: Path to the session directory location. If provided, the Garmin session will be saved to disk after login.
-# If a session file already exists in this directory (e.g., from a previous run), it will be reused if still valid.
-# If no path is specified, the session will only be stored in memory.
-# Please note that if the session is not persisted and you repeatedly restart the
-# program, you might experience rate limiting issues due to logging in too often.
-DATA_DIRECTORY_PATH=path/to/data/directory
-```
+| Variable Name           | Required | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Default Value                   | Accepted Format/Type                                                                                                                  | Example Value                                                               |
+| ----------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `WEBHOOK_URL`           | Yes      | URL for the Discord webhook that should receive the daily health summary.                                                                                                                                                                                                                                                                                                                                                                                                             |                                 | URL                                                                                                                                   | `https://discordapp.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz` |
+| `NOTIFY_TIME_OF_DAY`    | Yes      | The time when the daily health summary should be sent to the Discord webhook. **NB: If data for today is not available yet, the program will keep scheduling a retry 30-60 minutes later until the data becomes available.**                                                                                                                                                                                                                                                          |                                 | `HH:MM`                                                                                                                               | `06:00`                                                                     |
+| `SESSION_FILE_PATH`     | No       | Path to the session directory location. If provided, the Garmin session data will be saved to this location after successful login. If session data already exists in this directory (e.g., from a previous run), it will be reused if still valid. If no path is specified, the session will only be stored in memory. Please note that if the session is not persisted and you repeatedly restart the program, you may experience rate limiting issues due to logging in too often. | `None`                          | Filesystem Path                                                                                                                       | `path/to/session/directory`                                                 |
+| `MESSAGE_FORMAT`        | No       | The message format to use for the daily health summary. The `lines` format is better suited for mobile devices.                                                                                                                                                                                                                                                                                                                                                                       | `lines`                         | Options: `lines` [see example](docs/discord_message_example_lines.png), `table` [see example](docs/discord_message_example_table.png) |                                                                             |
+| `WEBHOOK_ERROR_URL`     | No       | Discord webhook URL that should receive an error message in case of any unhandled exceptions (can be the same as `WEBHOOK_URL`). This includes any unhandled exceptions caught by the scheduler. If not provided, no error notifications will be sent.                                                                                                                                                                                                                                | `None`                          | URL                                                                                                                                   | `https://discordapp.com/api/webhooks/1234567890/abcdefghijklmnopqrstuvwxyz` |
+| `TIME_ZONE`             | No       | The IANA time zone in which the `NOTIFY_TIME_OF_DAY` is specified.                                                                                                                                                                                                                                                                                                                                                                                                                    | Defaults to the local time zone | [IANA Time Zone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones)                                                        | `Europe/Berlin`                                                             |
+| `CREDENTIALS__EMAIL`    | No       | Garmin Connect email. If not provided, you will be prompted to enter it at program startup.                                                                                                                                                                                                                                                                                                                                                                                           | `None`                          | Email Address                                                                                                                         | `my@email.com`                                                              |
+| `CREDENTIALS__PASSWORD` | No       | Garmin Connect password. If not provided, you will be prompted to enter it at program startup.                                                                                                                                                                                                                                                                                                                                                                                        | `None`                          | String                                                                                                                                | `mypassword`                                                                |
 
 ## Local Installation 💻
 

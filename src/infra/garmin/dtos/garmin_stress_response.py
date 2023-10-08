@@ -6,15 +6,13 @@ from typing import Any, Generic, Optional, TypeVar
 
 from pydantic import BaseModel, TypeAdapter
 
+from src.infra.garmin.dtos.garmin_response import (
+    GarminResponseDto,
+    GarminResponseEntryDto,
+)
 from src.infra.garmin.garmin_api_client import JsonResponseType
 
 T = TypeVar("T")
-
-
-class GarminDto(Generic[T]):
-    @staticmethod
-    def from_json(json: Any) -> T:
-        raise NotImplementedError()
 
 
 # If no duration in stress segment, value will be none
@@ -27,17 +25,13 @@ class StressValues(BaseModel):
     mediumStressDuration: Optional[int]
 
 
-class StressEntry(BaseModel):
-    calendarDate: date
+class StressEntry(BaseModel, GarminResponseEntryDto):
     values: StressValues
 
 
 @dataclass
-class GarminStressResponse(GarminDto["GarminStressResponse"]):
-    entries: list[StressEntry]
-
+class GarminStressResponse(GarminResponseDto[StressEntry]):
     @staticmethod
     def from_json(json: JsonResponseType) -> "GarminStressResponse":
-        adapter = TypeAdapter(list[StressEntry])
-        entries = adapter.validate_python(json)
+        entries = GarminStressResponse._from_json_list(json, StressEntry)
         return GarminStressResponse(entries)

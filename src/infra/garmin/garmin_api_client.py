@@ -34,6 +34,7 @@ class GarminApiClient:
             Path
         ] = None,  # XXX: Should take a file saver instead of a path
     ) -> None:
+        super().__init__()
         self._base_client = base_client
         self._session_dir = session_dir
         self._time_provider = time_provider

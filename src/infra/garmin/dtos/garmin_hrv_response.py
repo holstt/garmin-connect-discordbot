@@ -1,8 +1,13 @@
-from datetime import date, datetime
-from typing import Any, Optional
+from dataclasses import dataclass
+from datetime import datetime
+from typing import Optional
 
-from pydantic import BaseModel, Field, TypeAdapter
+from pydantic import BaseModel, Field
 
+from src.infra.garmin.dtos.garmin_response import (
+    GarminResponseDto,
+    GarminResponseEntryDto,
+)
 from src.infra.garmin.garmin_api_client import JsonResponseType
 
 
@@ -13,8 +18,7 @@ class Baseline(BaseModel):
     markerValue: float
 
 
-class HrvSummary(BaseModel):
-    calendarDate: date
+class HrvSummary(BaseModel, GarminResponseEntryDto):
     weeklyAvg: int
     lastNightAvg: Optional[int]
     lastNight5MinHigh: Optional[int]
@@ -24,13 +28,17 @@ class HrvSummary(BaseModel):
     createTimeStamp: datetime
 
 
-class GarminHrvResponse(BaseModel):
-    # hrvSummaries: list[HrvSummary]
-    entries: list[HrvSummary] = Field(..., alias="hrvSummaries")
+# Make both private and public class, such that public class has same structure as other dto responses
+class _GarminHrvResponseInternal(BaseModel):
+    hrvSummaries: list[HrvSummary]
     userProfilePk: int
 
+
+@dataclass
+class GarminHrvResponse(GarminResponseDto[HrvSummary]):
     @staticmethod
     def from_json(json: JsonResponseType) -> "GarminHrvResponse":
-        adapter = TypeAdapter(GarminHrvResponse)
-        obj = adapter.validate_python(json)
-        return obj
+        internal_class = GarminHrvResponse._from_json_obj(
+            json, _GarminHrvResponseInternal
+        )
+        return GarminHrvResponse(internal_class.hrvSummaries)

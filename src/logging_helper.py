@@ -13,8 +13,8 @@ def setup_logging(module_logger_name: str, base_log_level: int = logging.INFO):
     logging.Formatter.converter = time.gmtime  # Use UTC
 
     # Always log debug messages from apscheduler to follow the scheduling process #XXX: We should probably just log it ourselves
-    library_logger = logging.getLogger("apscheduler")
-    library_logger.setLevel(logging.DEBUG)
+    # library_logger = logging.getLogger("apscheduler")
+    # library_logger.setLevel(logging.DEBUG)
     # Always log debug messages from our own code XXX: For now, we should be consistent with the log level
     logger = logging.getLogger(module_logger_name)
     logger.setLevel(logging.DEBUG)
@@ -42,6 +42,7 @@ def add_password_filter(password_to_redact: str):
 class RedactingFormatter(logging.Formatter):
     # Get the original formatter and the patterns to redact
     def __init__(self, orig_formatter: logging.Formatter, patterns: list[str]):
+        super().__init__()
         self.orig_formatter = orig_formatter
         self._patterns = patterns
 

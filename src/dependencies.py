@@ -14,6 +14,8 @@ from src.presentation.event_handlers import (
     ExceptionOccurredEventHandler,
     HealthSummaryReadyEventHandler,
 )
+from src.registry import FetcherRegistry, ResponseToDtoConverterRegistry
+from src.setup import build_fetcher_registry, build_to_dto_converter_registry
 
 
 class Dependencies(NamedTuple):
@@ -31,19 +33,28 @@ class Dependencies(NamedTuple):
 def resolve(app_config: Config) -> Dependencies:
     time_provider = TimeProvider()
 
-    garmin_base_client = Garmin(app_config.email, app_config.password)
+    garmin_base_client = Garmin(
+        app_config.credentials.email, app_config.credentials.password
+    )
 
     garmin_client = GarminApiClient(
         garmin_base_client, time_provider, app_config.session_file_path
     )
     garmin_adapter = GarminApiAdapter(garmin_client)
-    garmin_service = GarminService(garmin_adapter)
+
+    fetcher_registry = build_fetcher_registry(garmin_client)
+
+    to_dto_converter_registry = build_to_dto_converter_registry()
+
+    garmin_service = GarminService(
+        garmin_adapter, fetcher_registry, to_dto_converter_registry
+    )
 
     discord_client = DiscordApiClient(
         app_config.webhook_url, time_provider, service_name="garmin-connect-bot"
     )
 
-    discord_api_adapter = DiscordApiAdapter(discord_client)
+    discord_api_adapter = DiscordApiAdapter(discord_client, app_config.message_format)
 
     summary_ready_handler = HealthSummaryReadyEventHandler(discord_api_adapter)
 
@@ -55,7 +66,9 @@ def resolve(app_config: Config) -> Dependencies:
             time_provider,
             service_name="garmin-health-bot",
         )
-        discord_error_adapter = DiscordApiAdapter(discord_error_client)
+        discord_error_adapter = DiscordApiAdapter(
+            discord_error_client, app_config.message_format
+        )
         error_handler = ExceptionOccurredEventHandler(discord_error_adapter)
 
     scheduler = GarminFetchDataScheduler(
