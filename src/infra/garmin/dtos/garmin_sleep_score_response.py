@@ -5,20 +5,20 @@ from typing import Any
 
 from pydantic import BaseModel, TypeAdapter
 
+from src.infra.garmin.dtos.garmin_response import (
+    GarminResponseDto,
+    GarminResponseEntryDto,
+)
 from src.infra.garmin.garmin_api_client import JsonResponseType
 
 
-class SleepScoreEntry(BaseModel):
-    calendarDate: date
+class SleepScoreEntry(BaseModel, GarminResponseEntryDto):
     value: int
 
 
 @dataclass
-class GarminSleepScoreResponse:
-    entries: list[SleepScoreEntry]
-
+class GarminSleepScoreResponse(GarminResponseDto[SleepScoreEntry]):
     @staticmethod
     def from_json(json: JsonResponseType) -> "GarminSleepScoreResponse":
-        adapter = TypeAdapter(list[SleepScoreEntry])
-        entries = adapter.validate_python(json)
-        return GarminSleepScoreResponse(entries)
+        list = GarminSleepScoreResponse._from_json_list(json, SleepScoreEntry)
+        return GarminSleepScoreResponse(list)

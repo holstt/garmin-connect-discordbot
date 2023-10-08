@@ -4,6 +4,10 @@ from typing import Any
 
 from pydantic import BaseModel, Field, TypeAdapter
 
+from src.infra.garmin.dtos.garmin_response import (
+    GarminResponseDto,
+    GarminResponseEntryDto,
+)
 from src.infra.garmin.garmin_api_client import JsonResponseType
 
 
@@ -12,7 +16,7 @@ class BodyBatteryValueDescriptorDTOListItem(BaseModel):
     bodyBatteryValueDescriptorKey: str
 
 
-class BbEntry(BaseModel):
+class BbEntry(BaseModel, GarminResponseEntryDto):
     calendarDate: date = Field(
         alias="date"
     )  # use alias to follow naming of other DTOs...
@@ -29,11 +33,8 @@ class BbEntry(BaseModel):
 
 
 @dataclass
-class GarminBbResponse:
-    entries: list[BbEntry]
-
+class GarminBbResponse(GarminResponseDto[BbEntry]):
     @staticmethod
     def from_json(json: JsonResponseType) -> "GarminBbResponse":
-        adapter = TypeAdapter(list[BbEntry])
-        entries = adapter.validate_python(json)
+        entries = GarminBbResponse._from_json_list(json, BbEntry)
         return GarminBbResponse(entries)

@@ -9,7 +9,7 @@ from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse
 from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
 from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
 from src.infra.garmin.dtos.garmin_steps_response import GarminStepsResponse
-from src.infra.garmin.dtos.garmin_stress_response import GarminDto, GarminStressResponse
+from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
 from src.infra.garmin.garmin_api_client import GarminApiClient, GarminEndpoint
 
 logger = logging.getLogger(__name__)

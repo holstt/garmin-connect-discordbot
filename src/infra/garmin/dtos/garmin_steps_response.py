@@ -4,22 +4,22 @@ from typing import Any
 
 from pydantic import BaseModel, TypeAdapter
 
+from src.infra.garmin.dtos.garmin_response import (
+    GarminResponseDto,
+    GarminResponseEntryDto,
+)
 from src.infra.garmin.garmin_api_client import JsonResponseType
 
 
-class StepsEntry(BaseModel):
-    calendarDate: date
+class StepsEntry(BaseModel, GarminResponseEntryDto):
     totalSteps: int
     totalDistance: int
     stepGoal: int
 
 
 @dataclass
-class GarminStepsResponse:
-    entries: list[StepsEntry]
-
+class GarminStepsResponse(GarminResponseDto[StepsEntry]):
     @staticmethod
     def from_json(json: JsonResponseType) -> "GarminStepsResponse":
-        adapter = TypeAdapter(list[StepsEntry])
-        entries = adapter.validate_python(json)
-        return GarminStepsResponse(entries)
+        list = GarminStepsResponse._from_json_list(json, StepsEntry)
+        return GarminStepsResponse(list)
