@@ -23,6 +23,9 @@ def average_by(items: list[L], prop_selector: Callable[[L], float]) -> float:
     return total / len(items) if items else 0.0
 
 
+DAYS_IN_WEEK = 7
+
+
 class BaseMetric(ABC, Generic[R]):
     def __init__(
         self,
@@ -60,7 +63,7 @@ class SimpleMetric(BaseMetric[float]):
 
     @property
     def weekly_avg(self) -> float:
-        return average_by(self.entries[-7:], self._selector)
+        return average_by(self.entries[-DAYS_IN_WEEK:], self._selector)
 
     @property
     def diff_to_avg(self) -> float:
@@ -125,7 +128,7 @@ class SleepMetrics(BaseMetric[timedelta]):  # XXX: // SleepSummary
     @property
     def weekly_avg(self) -> timedelta:
         average_sleep_seconds = average_by(
-            self._entries[-7:], lambda x: x.values.totalSleepSeconds
+            self._entries[-DAYS_IN_WEEK:], lambda x: x.values.totalSleepSeconds
         )
         return timedelta(seconds=average_sleep_seconds)
 

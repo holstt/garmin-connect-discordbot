@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Optional
 
@@ -27,10 +28,17 @@ class HrvSummary(BaseModel, GarminResponseEntryDto):
     createTimeStamp: datetime
 
 
-class GarminHrvResponse(BaseModel, GarminResponseDto[HrvSummary]):
-    entries: list[HrvSummary] = Field(..., alias="hrvSummaries")
+# Make both private and public class, such that public class has same structure as other dto responses
+class _GarminHrvResponseInternal(BaseModel):
+    hrvSummaries: list[HrvSummary]
     userProfilePk: int
 
+
+@dataclass
+class GarminHrvResponse(GarminResponseDto[HrvSummary]):
     @staticmethod
     def from_json(json: JsonResponseType) -> "GarminHrvResponse":
-        return GarminHrvResponse._from_json_obj(json, GarminHrvResponse)
+        internal_class = GarminHrvResponse._from_json_obj(
+            json, _GarminHrvResponseInternal
+        )
+        return GarminHrvResponse(internal_class.hrvSummaries)

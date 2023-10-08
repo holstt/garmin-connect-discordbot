@@ -6,8 +6,10 @@ import src.domain.metrics as metrics
 from src.domain.common import DatePeriod
 from src.infra.garmin.dtos import *
 from src.infra.garmin.garmin_api_adapter import GarminApiAdapter
-from src.infra.plotting.metrics_plot import MetricsData
-from src.infra.plotting.plotting_service import create_metrics_plot, create_sleep_plot
+from src.infra.plotting.plotting_service import (
+    create_metrics_gridplot,
+    create_sleep_analysis_plot,
+)
 from src.registry import *
 from src.utils import get_concrete_type
 
@@ -82,21 +84,9 @@ class GarminService:
         dto_stress = get_concrete_type(dtos, GarminStressResponse)
         dto_hrv = get_concrete_type(dtos, GarminHrvResponse)
 
-        # Create metrics plot for weekly period
-        metrics_plot = create_metrics_plot(
-            MetricsData(
-                sleep=dto_sleep,
-                sleep_score=dto_sleep_score,
-                bb=dto_bb,
-                rhr=dto_rhr,
-                stress=dto_stress,
-                hrv=dto_hrv,
-                # steps=None,
-            ).get_last_n(DAYS_IN_WEEK)
-        )
+        metrics_plot = create_metrics_gridplot(dtos, n=DAYS_IN_WEEK)
 
-        # Create sleep plot for full period
-        sleep_plot = create_sleep_plot(
+        sleep_plot = create_sleep_analysis_plot(
             dto_sleep, dto_sleep_score, ma_window_size=DAYS_IN_WEEK
         )
 
