@@ -52,6 +52,7 @@ class DiscordApiClient:
     def send_images(self, images: list[BytesIO], names: list[str]) -> None:
         for image, name in zip(images, names):
             self._base_client.add_file(file=image.read(), filename=name)
+        self._execute()
 
     # Executes current state of the client and resets it
     def _execute(self) -> None:
