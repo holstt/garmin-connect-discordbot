@@ -65,8 +65,8 @@ def metric(
     name: str, icon: str, metric: SimpleMetric, with_max_val: Optional[int] = None
 ):
     recent_str = str(metric.current)
-    week_avg_str = str(round(metric.avg))
-    diff_to_avg_str = _value_to_signed_str(round(metric.diff_to_avg))
+    week_avg_str = str(round(metric.weekly_avg))
+    diff_to_avg_str = _value_to_signed_str(round(metric.diff_to_weekly_avg))
     out_of_max_str = f"/{with_max_val}" if with_max_val is not None else ""
 
     return MetricViewModel(
@@ -74,7 +74,9 @@ def metric(
         icon=icon,
         recent=recent_str,
         diff_to_avg=diff_to_avg_str,
-        diff_to_avg_emoji=_get_diff_emoji(metric.is_higher_better, metric.diff_to_avg),
+        diff_to_avg_emoji=_get_diff_emoji(
+            metric.is_higher_better, metric.diff_to_weekly_avg
+        ),
         week_avg=week_avg_str,
         out_of_max=out_of_max_str,
     )
@@ -115,9 +117,9 @@ def hrv(name: str, icon: str, hrv_metrics: HrvMetrics):
 
 def sleep(name: str, icon: str, sleep_metrics: SleepMetrics):
     recent_str = _format_timedelta(sleep_metrics.current)
-    week_avg_str = _format_timedelta(sleep_metrics.avg)
+    week_avg_str = _format_timedelta(sleep_metrics.weekly_avg)
     diff_to_avg_str = _format_timedelta(
-        sleep_metrics.diff_to_avg, should_include_sign=True
+        sleep_metrics.diff_to_weekly_avg, should_include_sign=True
     )
     diff_to_8h_str = _format_timedelta(
         sleep_metrics.get_diff_to_hour(8), should_include_sign=True
@@ -129,7 +131,8 @@ def sleep(name: str, icon: str, sleep_metrics: SleepMetrics):
         recent=recent_str,
         diff_to_avg=diff_to_avg_str,
         diff_to_avg_emoji=_get_diff_emoji(
-            sleep_metrics.is_higher_better, sleep_metrics.diff_to_avg.total_seconds()
+            sleep_metrics.is_higher_better,
+            sleep_metrics.diff_to_weekly_avg.total_seconds(),
         ),
         week_avg=week_avg_str,
         out_of_max="",
