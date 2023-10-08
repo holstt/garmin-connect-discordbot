@@ -37,10 +37,14 @@ def main(app_config: Config) -> None:
         raise e  # Re-raise to exit program
 
 
+from abc import ABC, abstractmethod
+
 if __name__ == "__main__":
     try:
         logging_helper.setup_logging(
-            module_logger_name=__name__, base_log_level=logging.DEBUG
+            module_logger_name=__name__,
+            base_log_level=logging.INFO
+            # module_logger_name=__name__, base_log_level=logging.DEBUG
         )
         app_config = config.get_config()
         logging_helper.add_password_filter(app_config.credentials.password)

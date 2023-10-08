@@ -43,7 +43,7 @@ class Config(BaseSettings):
     def create_notify_time(cls, notify_time: time, values: dict[str, Any]) -> time:
         time_zone: str = values["time_zone"]  # type: ignore
 
-        _get_notify_time(notify_time, time_zone)
+        notify_time = _get_notify_time(notify_time, time_zone)
         return notify_time
 
     @validator("session_file_path")
