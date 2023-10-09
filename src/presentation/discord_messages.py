@@ -1,13 +1,13 @@
 import enum
 import logging
 import re
+from typing import Callable
 
 from attr import has
 from discord_webhook import DiscordEmbed
 from table2ascii import Alignment, PresetStyle, table2ascii
 
 import src.presentation.metric_msg_builder as builder
-from src.domain.metrics import HealthSummary
 
 logger = logging.getLogger(__name__)
 
@@ -39,26 +39,15 @@ class MessageFormat(enum.Enum):
 
 # Health summary discord dto/message
 class DiscordHealthSummaryMessage(DiscordEmbed):
-    def __init__(self, summary: HealthSummary, format: MessageFormat):
+    def __init__(self, summary: builder.HealthSummaryViewModel, format: MessageFormat):
         title = f"Garmin Health Metrics, {summary.date.strftime('%d-%m-%Y')}"
         msg = ""
 
-        sleep = builder.sleep("Sleep", "💤", summary.sleep)
-        sleep_score = builder.metric("Sleep Score", "😴", summary.sleep_score, 100)
-        rhr = builder.metric(
-            "Resting HR", "💗", summary.rhr
-        )  # We do not use the regular heart emoji, as it seems to be more chars than the others and messes up the table alignment
-        hrv = builder.hrv("HRV", "💓", summary.hrv)
-        bb = builder.metric("Body Battery", "⚡", summary.bb, 100)
-        stress = builder.metric("Stress Level", "🤯", summary.stress, 100)
-
-        view_models = [sleep, sleep_score, rhr, hrv, bb, stress]
-
         match format:
             case MessageFormat.LINES:
-                msg = _create_lines(msg, view_models)
+                msg = _create_lines(msg, summary.metrics)
             case MessageFormat.TABLE:
-                msg = _create_table(msg, view_models)
+                msg = _create_table(msg, summary.metrics)
 
         super().__init__(
             title=title,

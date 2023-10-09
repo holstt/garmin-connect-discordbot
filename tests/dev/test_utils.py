@@ -3,12 +3,28 @@ import logging
 from pathlib import Path
 from typing import Any, Protocol, Type, TypeVar
 
+import src.config as config
+import src.dependencies as dependency_resolver
+import src.logging_helper as logging_helper
 from src.domain.common import DatePeriod
 from src.infra.garmin.garmin_api_adapter import dto_to_endpoint
 from src.infra.garmin.garmin_endpoints import GarminEndpoint
 from src.utils import to_YYYYMMDD
 
 logger = logging.getLogger(__name__)
+
+
+def base_setup(with_connect: bool = False):
+    logging_helper.setup_logging(
+        module_logger_name=__name__, base_log_level=logging.INFO
+    )
+    app_config = config.get_config()
+    logging_helper.add_password_filter(app_config.credentials.password)
+
+    dependencies = dependency_resolver.resolve(app_config)
+    if with_connect:
+        dependencies.garmin_api_client.login()
+    return dependencies
 
 
 # Require dto type to implement a from_json method
@@ -38,7 +54,7 @@ def save_dto_to_file(
 
 # Load dto from json file
 # Loads first file that matches endpoint associated with dto type
-# TODO: Generate some fake test data for repo
+# TODO: Generate some fake test data and save as json files in json_data folder -> test json to dto conversion
 def load_dto_from_file(dto_type: Type[T]) -> T:
     if not json_dir.exists():
         raise IOError(f"Json data directory does not exist: {json_dir}")

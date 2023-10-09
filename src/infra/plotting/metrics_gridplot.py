@@ -1,13 +1,23 @@
 from datetime import date
-from typing import NamedTuple, Optional
+from typing import Any, NamedTuple, Optional
 
 import numpy as np
 import numpy.typing as npt
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.figure import Figure
 
 import src.infra.garmin.dtos as dtos
+from src.domain.metrics import (
+    BaseMetric,
+    BodyBatteryMetrics,
+    HrvMetrics,
+    RhrMetrics,
+    SleepMetrics,
+    SleepScoreMetrics,
+    StressMetrics,
+)
 from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
 from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
 from src.infra.garmin.dtos.garmin_response import (
@@ -23,14 +33,14 @@ from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
 SECONDS_IN_HOUR = 3600
 
 
-class MetricPlot(NamedTuple):
+class _GridPlotMetric(NamedTuple):
     name: str
     color: str
     values: list[Optional[float]]
 
 
 # Creates subplot for each metric in a single figure
-def plot(metrics_data: list[GarminResponseDto[GarminResponseEntryDto]]):
+def plot(metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]]) -> Figure:
     # Just get the dates from one of the metrics (they should all be the same)
     dates = [entry.calendarDate for entry in metrics_data[0].entries]
     weekdays = [date.strftime("%a") for date in dates]
@@ -57,7 +67,7 @@ def plot(metrics_data: list[GarminResponseDto[GarminResponseEntryDto]]):
 
 
 def _add_subplot(
-    dates: list[date], weekdays: list[str], plot_metric: MetricPlot, ax: Axes
+    dates: list[date], weekdays: list[str], plot_metric: _GridPlotMetric, ax: Axes
 ):
     # _plot_with_colormap(plot_metric, dates, ax)
 
@@ -91,69 +101,70 @@ def _add_subplot(
     ax.grid(alpha=0.50)
 
 
-def _transform(metrics_data: list[GarminResponseDto[GarminResponseEntryDto]]):
+def _transform(metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]]):
     return [get_plot_data(metric) for metric in metrics_data]
 
 
+# TODO: Refactor
 # TODO: Move representation of each metric to setup/plugin pattern
-def get_plot_data(metric: GarminResponseDto[GarminResponseEntryDto]):
-    match metric:
-        case GarminSleepResponse(entries):
-            return MetricPlot(
-                name="Sleep Duration",
-                color="#2ca02c",
-                values=[
-                    entry.values.totalSleepSeconds / SECONDS_IN_HOUR
-                    for entry in entries
-                ],
-            )
-        case GarminSleepScoreResponse(entries):
-            return MetricPlot(
-                name="Sleep Score",
-                color="#9467bd",
-                values=[entry.value for entry in entries],
-            )
-        case GarminRhrResponse(entries):
-            return MetricPlot(
-                name="Resting Heart Rate",
-                color="#d62728",
-                values=[entry.values.restingHR for entry in entries],
-            )
-        case GarminStressResponse(entries):
-            return MetricPlot(
-                name="Stress Level",
-                color="#8c564b",
-                values=[entry.values.overallStressLevel for entry in entries],
-            )
-        case GarminBbResponse(entries):
-            return MetricPlot(
-                name="Body Battery",
-                color="#e377c2",
-                values=[
-                    max([val for (time, val) in entry.bodyBatteryValuesArray])
-                    for entry in entries
-                ],
-            )
-        case GarminHrvResponse(entries):
-            return MetricPlot(
-                name="HRV",
-                color="#7f7f7f",
-                values=[entry.lastNightAvg for entry in entries],
-            )
-        case GarminStepsResponse(entries):
-            return MetricPlot(
-                name="Steps",
-                color="#1f77b4",
-                values=[entry.totalSteps for entry in entries],
-            )
-        # TODO:
-        # MetricObj(name='Intensity Minutes', color='#ff7f0e', range=(0, 120)),
-        case _:
-            raise ValueError(f"Unknown metric: {metric}")
+def get_plot_data(metric: BaseMetric[GarminResponseEntryDto, Any]) -> _GridPlotMetric:
+    if isinstance(metric, SleepMetrics):
+        return _GridPlotMetric(
+            name="Sleep",
+            color="#2ca02c",
+            values=[
+                entry.values.totalSleepSeconds / SECONDS_IN_HOUR
+                for entry in metric.entries
+            ],
+        )
+    if isinstance(metric, RhrMetrics):
+        return _GridPlotMetric(
+            name="Resting Heart Rate",
+            color="#d62728",
+            values=[entry.values.restingHR for entry in metric.entries],
+        )
+    if isinstance(metric, StressMetrics):
+        return _GridPlotMetric(
+            name="Stress Level",
+            color="#8c564b",
+            values=[entry.values.overallStressLevel for entry in metric.entries],
+        )
+    if isinstance(metric, BodyBatteryMetrics):
+        return _GridPlotMetric(
+            name="Body Battery",
+            color="#e377c2",
+            values=[
+                max([val for (time, val) in entry.bodyBatteryValuesArray])
+                for entry in metric.entries
+            ],
+        )
+    if isinstance(metric, SleepScoreMetrics):
+        return _GridPlotMetric(
+            name="Sleep Score",
+            color="#9467bd",
+            values=[entry.value for entry in metric.entries],
+        )
+    if isinstance(metric, HrvMetrics):
+        return _GridPlotMetric(
+            name="HRV",
+            color="#7f7f7f",
+            values=[entry.lastNightAvg for entry in metric.entries],
+        )
+
+    raise ValueError(f"Unknown metric: {metric}")
+
+    # TODO:
+    # case GarminStepsResponse(entries):
+    #     return _GridPlotMetric(
+    #         name="Steps",
+    #         color="#1f77b4",
+    #         values=[entry.totalSteps for entry in entries],
+    #     )
+    # MetricObj(name='Intensity Minutes', color='#ff7f0e', range=(0, 120)),
 
 
 # XXX: Not used. Solid colors seem to be better?
-def _plot_with_colormap(plot_metric: MetricPlot, dates: list[date], ax: Axes):
+def _plot_with_colormap(plot_metric: _GridPlotMetric, dates: list[date], ax: Axes):
     values: npt.NDArray[np.float64] = np.array(plot_metric.values, dtype=np.float64)
 
     # Create a linear segmented colormap from white to the input hex color

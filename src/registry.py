@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Callable, NamedTuple
+from typing import Any, Callable, NamedTuple, TypeVar
 
 from src.domain.common import DatePeriod
 from src.domain.metrics import BaseMetric
@@ -12,9 +12,10 @@ from src.infra.garmin.garmin_api_client import (
     GarminEndpoint,
     JsonResponseType,
 )
-from src.presentation.metric_msg_builder import MetricViewModel
+from src.presentation.metric_msg_builder import MetricPlot, MetricViewModel
 
 
+# Unique identifier for each Garmin metric
 class GarminMetricId(Enum):
     SLEEP = "sleep"
     SLEEP_SCORE = "sleep_score"
@@ -71,8 +72,8 @@ class ResponseToDtoConverterRegistry:
         return func(data)
 
 
-DtoToConverterModel = Callable[
-    [GarminResponseDto[GarminResponseEntryDto]], BaseMetric[Any]
+DtoToModelConverter = Callable[
+    [GarminResponseDto[GarminResponseEntryDto]], BaseMetric[GarminResponseEntryDto, Any]
 ]
 
 
@@ -80,13 +81,13 @@ class DtoToModelConverterRegistry:
     def __init__(self):
         super().__init__()
         self._converters: dict[
-            type[GarminResponseDto[GarminResponseEntryDto]], DtoToConverterModel
+            type[GarminResponseDto[GarminResponseEntryDto]], DtoToModelConverter
         ] = {}
 
     def register(
         self,
         dto_type: type[GarminResponseDto[GarminResponseEntryDto]],
-        converter: DtoToConverterModel,
+        converter: DtoToModelConverter,
     ):
         self._converters[dto_type] = converter
 
@@ -98,22 +99,36 @@ class DtoToModelConverterRegistry:
         return func(instance)
 
 
-ModelToPresenterConverter = Callable[[BaseMetric[Any]], MetricViewModel]
+ModelToVmConverter = Callable[
+    [BaseMetric[GarminResponseEntryDto, Any]], MetricViewModel
+]
 
 
-class ModelToPresenterConverterRegistry:
+class ModelToVmConverterRegistry:
     def __init__(self):
         super().__init__()
-        self._converters: dict[type[BaseMetric[Any]], ModelToPresenterConverter] = {}
+        self._converters: dict[
+            type[BaseMetric[GarminResponseEntryDto, Any]], ModelToVmConverter
+        ] = {}
 
     def register(
-        self, instance: type[BaseMetric[Any]], converter: ModelToPresenterConverter
+        self,
+        key: type[BaseMetric[GarminResponseEntryDto, Any]],
+        converter: ModelToVmConverter,
     ):
-        self._converters[instance] = converter
+        self._converters[key] = converter
 
-    def convert(self, instance: BaseMetric[Any]):
+    def convert(
+        self, instance: BaseMetric[GarminResponseEntryDto, Any]
+    ) -> MetricViewModel:
         instance_type = type(instance)
         if instance_type not in self._converters:
             raise ValueError(f"No converter found for {instance_type}")
         func = self._converters[instance_type]
         return func(instance)
+
+
+# Given a list of models, return a plot if required metrics are available, otherwise None
+PlottingStrategy = Callable[
+    [list[BaseMetric[GarminResponseEntryDto, Any]]], MetricPlot | None
+]

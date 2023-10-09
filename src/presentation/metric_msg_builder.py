@@ -1,12 +1,29 @@
-from datetime import timedelta
+from dataclasses import dataclass
+from datetime import date, timedelta
+from io import BytesIO
 from typing import NamedTuple, Optional
 
 from src.domain.metrics import HrvMetrics, SimpleMetric, SleepMetrics
+from src.infra.garmin.dtos.garmin_response import (
+    GarminResponseDto,
+    GarminResponseEntryDto,
+)
 
 
 class DiffToTarget(NamedTuple):
     target_name: str
     diff: str
+
+
+class MetricPlot(NamedTuple):
+    id: str
+    data: BytesIO
+
+
+class HealthSummaryViewModel(NamedTuple):
+    date: date
+    metrics: list["MetricViewModel"]
+    # plots: list[MetricPlot]
 
 
 class MetricViewModel(NamedTuple):
@@ -19,6 +36,7 @@ class MetricViewModel(NamedTuple):
     out_of_max: str
     diff_to_target: Optional[DiffToTarget] = None
 
+    # XXX: Decouple -> Use different strategies for each message format?
     def to_line(self) -> str:
         diff_to_target_str = (
             f", Δ {self.diff_to_target.target_name}: {self.diff_to_target.diff}"
@@ -62,8 +80,11 @@ def _format_timedelta(delta: timedelta, should_include_sign: bool = False) -> st
 
 # Generic helper for simple metrics
 def metric(
-    name: str, icon: str, metric: SimpleMetric, with_max_val: Optional[int] = None
-):
+    name: str,
+    icon: str,
+    metric: SimpleMetric[GarminResponseEntryDto],
+    with_max_val: Optional[int] = None,
+) -> MetricViewModel:
     recent_str = str(metric.current)
     week_avg_str = str(round(metric.weekly_avg))
     diff_to_avg_str = _value_to_signed_str(round(metric.diff_to_weekly_avg))

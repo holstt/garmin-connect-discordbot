@@ -3,7 +3,7 @@ import json
 import logging
 from datetime import date
 from pathlib import Path
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional, Sequence, TypeVar
 
 from dotenv import load_dotenv
 
@@ -71,9 +71,17 @@ T = TypeVar("T")
 
 
 # A generic function that returns target type from a list of items or fails if not found
-def get_concrete_type(items: list[Any], type: type[T]) -> T:
+def find_first_of_type_or_fail(items: Sequence[Any], type: type[T]) -> T:
+    item = find_first_of_type(items, type)
+    if item:
+        return item
+    else:
+        raise ValueError(f"Could not find item of type {type} in list")
+
+
+def find_first_of_type(items: Sequence[Any], type: type[T]) -> T | None:
     for item in items:
         if isinstance(item, type):
             return item
 
-    raise ValueError(f"Could not find item of type {type} in list")
+    return None
