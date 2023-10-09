@@ -1,4 +1,5 @@
-from typing import Protocol, cast
+import logging
+from typing import Protocol, Sequence, cast
 
 from typeguard import check_type
 
@@ -24,8 +25,14 @@ from src.infra.garmin.garmin_api_client import (
     GarminEndpoint,
     JsonResponseType,
 )
+from src.infra.plotting.plotting_service import (
+    create_metrics_gridplot,
+    create_sleep_analysis_plot,
+)
 from src.registry import *
+from src.utils import find_first_of_type, find_first_of_type_or_fail
 
+logger = logging.getLogger(__name__)
 # TODO: Create class resp. for adding a metric to the pipeline
 
 
@@ -102,8 +109,8 @@ def build_to_model_converter_registry() -> DtoToModelConverterRegistry:
     return reg
 
 
-def build_to_presenter_converter_registry() -> ModelToPresenterConverterRegistry:
-    reg = ModelToPresenterConverterRegistry()
+def build_to_presenter_converter_registry() -> ModelToVmConverterRegistry:
+    reg = ModelToVmConverterRegistry()
 
     reg.register(
         SleepMetrics,
@@ -159,3 +166,35 @@ def build_to_dto_converter(
         return dto_type.from_json(data)
 
     return converter
+
+
+# Build available plotting strategies.
+# Each strategy checks for presence of required metrics and returns a plot if required metrics for that strategy are present
+def build_plotting_strategies() -> list[PlottingStrategy]:
+    DAYS_IN_WEEK = 7  # XXX: Configurable?
+
+    def build_metrics_plot(
+        metrics: list[BaseMetric[GarminResponseEntryDto, Any]]
+    ) -> MetricPlot:
+        # No specific metrics required, it's just a generic plot of all metrics
+        metrics_plot = create_metrics_gridplot(metrics, n=DAYS_IN_WEEK)
+        return MetricPlot("metrics_plot", metrics_plot)
+
+    def build_sleep_plot(
+        metrics: Sequence[BaseMetric[GarminResponseEntryDto, Any]]
+    ) -> MetricPlot | None:
+        # Ensure sleep and sleep score metrics are present for this plot
+        sleep = find_first_of_type(metrics, SleepMetrics)
+        sleep_score = find_first_of_type(metrics, SleepScoreMetrics)
+
+        # XXX: Just viz sleep metric without score if no score available? E.g. many watches support sleep tracking but not sleep score?
+        if not sleep or not sleep_score:
+            logger.debug("Unable to create sleep plot, missing required metrics")
+            return None
+
+        sleep_plot = create_sleep_analysis_plot(
+            sleep, sleep_score, ma_window_size=DAYS_IN_WEEK
+        )
+        return MetricPlot("sleep_plot", sleep_plot)
+
+    return [build_metrics_plot, build_sleep_plot]

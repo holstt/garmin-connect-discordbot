@@ -1,8 +1,13 @@
+from dataclasses import dataclass
 from datetime import date, timedelta
 from io import BytesIO
 from typing import NamedTuple, Optional
 
-from src.domain.metrics import HrvMetrics, MetricPlot, SimpleMetric, SleepMetrics
+from src.domain.metrics import HrvMetrics, SimpleMetric, SleepMetrics
+from src.infra.garmin.dtos.garmin_response import (
+    GarminResponseDto,
+    GarminResponseEntryDto,
+)
 
 
 class DiffToTarget(NamedTuple):
@@ -10,10 +15,15 @@ class DiffToTarget(NamedTuple):
     diff: str
 
 
+class MetricPlot(NamedTuple):
+    id: str
+    data: BytesIO
+
+
 class HealthSummaryViewModel(NamedTuple):
     date: date
     metrics: list["MetricViewModel"]
-    plots: list[MetricPlot]
+    # plots: list[MetricPlot]
 
 
 class MetricViewModel(NamedTuple):
@@ -70,7 +80,10 @@ def _format_timedelta(delta: timedelta, should_include_sign: bool = False) -> st
 
 # Generic helper for simple metrics
 def metric(
-    name: str, icon: str, metric: SimpleMetric, with_max_val: Optional[int] = None
+    name: str,
+    icon: str,
+    metric: SimpleMetric[GarminResponseEntryDto],
+    with_max_val: Optional[int] = None,
 ) -> MetricViewModel:
     recent_str = str(metric.current)
     week_avg_str = str(round(metric.weekly_avg))

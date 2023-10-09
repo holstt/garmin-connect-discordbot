@@ -1,5 +1,6 @@
 import datetime
-from abc import ABC
+from abc import ABC, abstractmethod
+from copy import copy
 from dataclasses import dataclass
 from datetime import timedelta
 from io import BytesIO
@@ -7,14 +8,21 @@ from io import BytesIO
 # T = TypeVar("T")
 from typing import Any, Callable, Generic, Optional, TypeVar
 
-from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
-from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
-from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse
-from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
-from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
-from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
+from src.infra.garmin.dtos.garmin_bb_response import BbEntry, GarminBbResponse
+from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse, HrvSummary
+from src.infra.garmin.dtos.garmin_response import GarminResponseEntryDto
+from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse, RhrEntry
+from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse, SleepEntry
+from src.infra.garmin.dtos.garmin_sleep_score_response import (
+    GarminSleepScoreResponse,
+    SleepScoreEntry,
+)
+from src.infra.garmin.dtos.garmin_stress_response import (
+    GarminStressResponse,
+    StressEntry,
+)
 
-L = TypeVar("L")  # List type
+L = TypeVar("L", covariant=True)  # List type
 R = TypeVar("R")  # Return type
 
 
@@ -26,7 +34,7 @@ def average_by(items: list[L], prop_selector: Callable[[L], float]) -> float:
 DAYS_IN_WEEK = 7
 
 
-class BaseMetric(ABC, Generic[R]):
+class BaseMetric(ABC, Generic[L, R]):
     def __init__(
         self,
         entries: list[L],
@@ -34,9 +42,16 @@ class BaseMetric(ABC, Generic[R]):
         is_higher_better: bool = True,
     ):
         super().__init__()
+
         self._entries = entries
         self._selector = selector
         self.is_higher_better = is_higher_better
+
+    # Make a shallow copy with reduced entries
+    def with_last_n(self, n: int):
+        instance_copy = copy(self)
+        instance_copy._entries = self._entries[-n:]
+        return instance_copy
 
     @property
     def entries(self):
@@ -47,7 +62,7 @@ class BaseMetric(ABC, Generic[R]):
         return self._selector(self.entries[-1])
 
 
-class SimpleMetric(BaseMetric[float]):
+class SimpleMetric(BaseMetric[L, float], ABC):
     def __init__(
         self,
         entries: list[L],
@@ -80,13 +95,13 @@ class SimpleMetric(BaseMetric[float]):
 # NB! There may be gaps in data if metric not registered for some reason (e.g. if not always wearing device during sleep)
 
 
-class RhrMetrics(SimpleMetric):
+class RhrMetrics(SimpleMetric[RhrEntry]):
     def __init__(self, rhr_data: GarminRhrResponse):
         entries = sorted(rhr_data.entries, key=lambda x: x.calendarDate)
         super().__init__(entries, lambda x: x.values.restingHR, is_higher_better=False)
 
 
-class BodyBatteryMetrics(SimpleMetric):
+class BodyBatteryMetrics(SimpleMetric[BbEntry]):
     def __init__(self, bb_data: GarminBbResponse):
         entries = sorted(bb_data.entries, key=lambda x: x.calendarDate)
         super().__init__(
@@ -94,7 +109,7 @@ class BodyBatteryMetrics(SimpleMetric):
         )
 
 
-class StressMetrics(SimpleMetric):
+class StressMetrics(SimpleMetric[StressEntry]):
     def __init__(self, stress_data: GarminStressResponse):
         entries = sorted(stress_data.entries, key=lambda x: x.calendarDate)
         super().__init__(
@@ -102,26 +117,25 @@ class StressMetrics(SimpleMetric):
         )
 
 
-class SleepScoreMetrics(SimpleMetric):
+class SleepScoreMetrics(SimpleMetric[SleepScoreEntry]):
     def __init__(self, sleep_data: GarminSleepScoreResponse):
         entries = sorted(sleep_data.entries, key=lambda x: x.calendarDate)
         super().__init__(entries, lambda x: x.value)
 
 
-class SleepMetrics(BaseMetric[timedelta]):  # XXX: // SleepSummary
+class SleepMetrics(BaseMetric[SleepEntry, timedelta]):  # XXX: // SleepSummary
     def __init__(self, sleep_data: GarminSleepResponse):
-        super().__init__(
-            sleep_data.entries, lambda x: timedelta(seconds=x.values.totalSleepSeconds)
-        )
-
         # Ensure sorted by date such that the most recent entry is last
-        self._entries = sorted(sleep_data.entries, key=lambda x: x.calendarDate)
+        entries = sorted(sleep_data.entries, key=lambda x: x.calendarDate)
+        super().__init__(
+            entries, lambda x: timedelta(seconds=x.values.totalSleepSeconds)
+        )
 
     @property
     # Returns average sleep time for the sleep data period
     def avg(self) -> timedelta:
         average_sleep_seconds = average_by(
-            self._entries, lambda x: x.values.totalSleepSeconds
+            self.entries, lambda x: x.values.totalSleepSeconds
         )
         return timedelta(seconds=average_sleep_seconds)
 
@@ -144,7 +158,7 @@ class SleepMetrics(BaseMetric[timedelta]):  # XXX: // SleepSummary
         return self.current - timedelta(hours=hour)
 
 
-class HrvMetrics(BaseMetric[Optional[int]]):
+class HrvMetrics(BaseMetric[HrvSummary, Optional[int]]):
     def __init__(self, hrv_data: GarminHrvResponse) -> None:
         self._entries = sorted(hrv_data.entries, key=lambda x: x.calendarDate)
         super().__init__(
@@ -174,16 +188,9 @@ class HrvMetrics(BaseMetric[Optional[int]]):
         return self._entries[-1].status == "BALANCED"
 
 
-@dataclass
-class MetricPlot:
-    id: str
-    data: BytesIO
-
-
 # Represents data for a health summary
 @dataclass(frozen=True)
 class HealthSummary:
     date: datetime.date
-    plots: list[MetricPlot]
-
-    metrics: list[BaseMetric[Any]]
+    # plots: list[MetricPlot]
+    metrics: list[BaseMetric[GarminResponseEntryDto, Any]]

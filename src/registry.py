@@ -12,9 +12,10 @@ from src.infra.garmin.garmin_api_client import (
     GarminEndpoint,
     JsonResponseType,
 )
-from src.presentation.metric_msg_builder import MetricViewModel
+from src.presentation.metric_msg_builder import MetricPlot, MetricViewModel
 
 
+# Unique identifier for each Garmin metric
 class GarminMetricId(Enum):
     SLEEP = "sleep"
     SLEEP_SCORE = "sleep_score"
@@ -72,7 +73,7 @@ class ResponseToDtoConverterRegistry:
 
 
 DtoToModelConverter = Callable[
-    [GarminResponseDto[GarminResponseEntryDto]], BaseMetric[Any]
+    [GarminResponseDto[GarminResponseEntryDto]], BaseMetric[GarminResponseEntryDto, Any]
 ]
 
 
@@ -98,22 +99,36 @@ class DtoToModelConverterRegistry:
         return func(instance)
 
 
-ModelToPresenterConverter = Callable[[BaseMetric[Any]], MetricViewModel]
+ModelToVmConverter = Callable[
+    [BaseMetric[GarminResponseEntryDto, Any]], MetricViewModel
+]
 
 
-class ModelToPresenterConverterRegistry:
+class ModelToVmConverterRegistry:
     def __init__(self):
         super().__init__()
-        self._converters: dict[type[BaseMetric[Any]], ModelToPresenterConverter] = {}
+        self._converters: dict[
+            type[BaseMetric[GarminResponseEntryDto, Any]], ModelToVmConverter
+        ] = {}
 
     def register(
-        self, key: type[BaseMetric[Any]], converter: ModelToPresenterConverter
+        self,
+        key: type[BaseMetric[GarminResponseEntryDto, Any]],
+        converter: ModelToVmConverter,
     ):
         self._converters[key] = converter
 
-    def convert(self, instance: BaseMetric[Any]) -> MetricViewModel:
+    def convert(
+        self, instance: BaseMetric[GarminResponseEntryDto, Any]
+    ) -> MetricViewModel:
         instance_type = type(instance)
         if instance_type not in self._converters:
             raise ValueError(f"No converter found for {instance_type}")
         func = self._converters[instance_type]
         return func(instance)
+
+
+# Given a list of models, return a plot if required metrics are available, otherwise None
+PlottingStrategy = Callable[
+    [list[BaseMetric[GarminResponseEntryDto, Any]]], MetricPlot | None
+]

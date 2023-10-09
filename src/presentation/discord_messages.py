@@ -1,13 +1,13 @@
 import enum
 import logging
 import re
+from typing import Callable
 
 from attr import has
 from discord_webhook import DiscordEmbed
 from table2ascii import Alignment, PresetStyle, table2ascii
 
 import src.presentation.metric_msg_builder as builder
-from src.domain.metrics import HealthSummary
 
 logger = logging.getLogger(__name__)
 

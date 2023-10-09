@@ -11,7 +11,7 @@ from src.infra.plotting.plotting_service import (
     create_sleep_analysis_plot,
 )
 from src.registry import *
-from src.utils import get_concrete_type
+from src.utils import find_first_of_type_or_fail
 
 logger = logging.getLogger(__name__)
 
@@ -78,25 +78,8 @@ class GarminService:
 
             dtos.append(dto)
 
-        # XXX: Handle if no data for a metric -> plotting strategy checks for presence of required metrics?
-        # XXX: A plotting registry has all available plotting strategies, each strategy checks for presence of required metrics and returns a plot if all metrics are present? I.e. we can add and a remove plots dynamically from setup
-        # plots: MetricPlot = []
-        # for plotting_strategy in plotting_strategy_registry.plotting_strategies:
-        #   plot = plotting_strategy.plot(dtos) # Log if no data for a metric
-        #   if plot:
-        #     plots.append(plot)
-
-        # XXX: For now, get concrete types manually to be compatible with code below.
-        dto_sleep = get_concrete_type(dtos, GarminSleepResponse)
-        dto_sleep_score = get_concrete_type(dtos, GarminSleepScoreResponse)
-        metrics_plot = create_metrics_gridplot(dtos, n=DAYS_IN_WEEK)
-
-        sleep_plot = create_sleep_analysis_plot(
-            dto_sleep, dto_sleep_score, ma_window_size=DAYS_IN_WEEK
-        )
-
         # Iterate dtos and convert to models
-        models: list[BaseMetric[Any]] = []
+        models: list[BaseMetric[GarminResponseEntryDto, Any]] = []
         for dto in dtos:
             model = self._dto_to_model_converter_registry.convert(dto)
             models.append(model)
@@ -105,11 +88,6 @@ class GarminService:
         health_summary = metrics.HealthSummary(
             date=period.end,
             metrics=models,
-            # TODO: Strat resp. for creating metric plot with name
-            plots=[
-                metrics.MetricPlot("metrics_plot", metrics_plot),
-                metrics.MetricPlot("sleep_plot", sleep_plot),
-            ],
         )
 
         return health_summary

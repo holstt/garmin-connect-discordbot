@@ -15,8 +15,6 @@ class HealthSummaryReadyEventHandler:
     def handle(self, summary: HealthSummary) -> None:
         logger.info(f"Handling event: Health summary ready")
         self._service.send_health_summary(summary)
-        # Send plots. TODO: Only if config is set
-        self._service.send_images(summary.plots)
 
 
 class ExceptionOccurredEventHandler:

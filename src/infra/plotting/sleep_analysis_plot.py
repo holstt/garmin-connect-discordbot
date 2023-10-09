@@ -14,8 +14,10 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.patches import FancyBboxPatch
 from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore
 
-from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
-from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
+from src.domain.metrics import SleepMetrics, SleepScoreMetrics  # type: ignore
+
+# from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
+# from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
 
 logger = logging.getLogger(__name__)
 
@@ -70,8 +72,8 @@ class PlottingData(NamedTuple):
 # - 7-day moving average stacked area chart for each sleep stage for the last 4 weeks
 # - Sleep score waffle chart for the last 4 weeks
 def plot(
-    dto_sleep_duration: GarminSleepResponse,
-    dto_sleep_score: GarminSleepScoreResponse,
+    sleep: SleepMetrics,
+    sleep_score: SleepScoreMetrics,
     ma_window_size: int,  # Window size of moving average
 ):
     fig = plt.figure(figsize=(12, 9))
@@ -80,14 +82,14 @@ def plot(
     four_weeks_plot = plt.subplot(gs[1, 0])
     waffle_plot = plt.subplot(gs[1, 1])
 
-    sleep_plotting_data = _transform_durations(dto_sleep_duration, ma_window_size)
+    sleep_plotting_data = _transform_durations(sleep, ma_window_size)
 
     # Chart 1
     # Reduce to last 7 days
     week_data = sleep_plotting_data.get_last_n(DAYS_IN_WEEK)
     plot_week_durations(week_plot, week_data)
     score_plot: Axes = week_plot.twinx()  # type: ignore
-    plot_scores_dot(score_plot, dto_sleep_score, limit=DAYS_IN_WEEK)
+    plot_scores_dot(score_plot, sleep_score, limit=DAYS_IN_WEEK)
 
     # Chart 2
     FOUR_WEEKS = 4 * DAYS_IN_WEEK
@@ -95,14 +97,14 @@ def plot(
     plot_moving_avg_durations(four_weeks_plot, four_weeks_data)
     plot_scores_line(
         four_weeks_plot,
-        dto_sleep_score,
+        sleep_score,
         ma_window_size,
         limit=FOUR_WEEKS,
     )
 
     # Chart 3
     # _plot_waffle_chart_sleep_duration(waffle_plot, dto_sleep_duration)
-    _plot_waffle_chart_sleep_score(waffle_plot, dto_sleep_score)
+    _plot_waffle_chart_sleep_score(waffle_plot, sleep_score)
 
     handles, labels = week_plot.get_legend_handles_labels()
     handles_score, labels_score = score_plot.get_legend_handles_labels()
@@ -120,7 +122,7 @@ def plot(
 
 def plot_scores_line(
     full_plot: Axes,
-    dto_sleep_score: GarminSleepScoreResponse,
+    sleep_score: SleepScoreMetrics,
     ma_window_size: int,
     limit: int,
 ):
@@ -128,9 +130,9 @@ def plot_scores_line(
     score_plot_ma: Axes = full_plot.twinx()  # type: ignore
 
     score_plot_ma.plot(
-        [entry.calendarDate for entry in dto_sleep_score.entries[-limit:]],  # type: ignore
+        [entry.calendarDate for entry in sleep_score.entries[-limit:]],  # type: ignore
         _get_moving_average(  # type: ignore
-            [entry.value for entry in dto_sleep_score.entries[-limit:]], ma_window_size
+            [entry.value for entry in sleep_score.entries[-limit:]], ma_window_size
         ),
         color="black",
         label="Sleep Score",
@@ -139,13 +141,11 @@ def plot_scores_line(
     score_plot_ma.set_ylabel("Sleep Score (0-100)", color="black")
 
 
-def plot_scores_dot(
-    score_plot: Axes, dto_sleep_score: GarminSleepScoreResponse, limit: int
-):
+def plot_scores_dot(score_plot: Axes, sleep_score: SleepScoreMetrics, limit: int):
     # Plot sleep score with its own y-axis
     line = score_plot.plot(
-        [entry.calendarDate for entry in dto_sleep_score.entries[-limit:]],  # type: ignore
-        [entry.value for entry in dto_sleep_score.entries[-limit:]],
+        [entry.calendarDate for entry in sleep_score.entries[-limit:]],  # type: ignore
+        [entry.value for entry in sleep_score.entries[-limit:]],
         color="black",
         label="Sleep Score",
         marker="o",
@@ -219,7 +219,7 @@ def plot_moving_avg_durations(plot: Axes, plotting_data: PlottingData):
 
 
 # Tranform into suitable plotting data
-def _transform_durations(dto: GarminSleepResponse, window_size: int) -> PlottingData:
+def _transform_durations(sleep: SleepMetrics, window_size: int) -> PlottingData:
     # Calculation for normalizing sleep data (not used atm)
     # def sum_durations(entry: SleepEntry):
     #     valid_durations = [
@@ -232,9 +232,11 @@ def _transform_durations(dto: GarminSleepResponse, window_size: int) -> Plotting
 
     # max_total_sleep = max([sum_durations(entry) for entry in dto.entries])
 
-    dates = [entry.calendarDate for entry in dto.entries]
+    dates = [entry.calendarDate for entry in sleep.entries]
 
-    values = [entry.values.deepSleepSeconds / SECONDS_IN_HOUR for entry in dto.entries]
+    values = [
+        entry.values.deepSleepSeconds / SECONDS_IN_HOUR for entry in sleep.entries
+    ]
     deep_sleep = Segment(
         name=SegmentNames.DEEP.value,
         color=Colors.DEEP.value,
@@ -242,7 +244,9 @@ def _transform_durations(dto: GarminSleepResponse, window_size: int) -> Plotting
         values_ma=_get_moving_average(values, window_size),
     )
 
-    values = [entry.values.lightSleepSeconds / SECONDS_IN_HOUR for entry in dto.entries]
+    values = [
+        entry.values.lightSleepSeconds / SECONDS_IN_HOUR for entry in sleep.entries
+    ]
     light_sleep = Segment(
         name=SegmentNames.LIGHT.value,
         color=Colors.LIGHT.value,
@@ -250,7 +254,7 @@ def _transform_durations(dto: GarminSleepResponse, window_size: int) -> Plotting
         values_ma=_get_moving_average(values, window_size),
     )
 
-    values = [entry.values.REMSleepSeconds / SECONDS_IN_HOUR for entry in dto.entries]
+    values = [entry.values.REMSleepSeconds / SECONDS_IN_HOUR for entry in sleep.entries]
     rem_sleep = Segment(
         name=SegmentNames.REM.value,
         color=Colors.REM.value,
@@ -258,7 +262,9 @@ def _transform_durations(dto: GarminSleepResponse, window_size: int) -> Plotting
         values_ma=_get_moving_average(values, window_size),
     )
 
-    values = [entry.values.awakeSleepSeconds / SECONDS_IN_HOUR for entry in dto.entries]
+    values = [
+        entry.values.awakeSleepSeconds / SECONDS_IN_HOUR for entry in sleep.entries
+    ]
     awake_sleep = Segment(
         name=SegmentNames.AWAKE.value,
         color=Colors.AWAKE.value,
@@ -282,13 +288,13 @@ def _get_moving_average(values: list[float], window_size: int) -> list[Optional[
     return moving_averages
 
 
-def _plot_waffle_chart_sleep_score(ax: Axes, dto: GarminSleepScoreResponse):
+def _plot_waffle_chart_sleep_score(ax: Axes, model: SleepScoreMetrics):
     sleep_data = np.array(
-        [entry.value for entry in dto.entries],
+        [entry.value for entry in model.entries],
         dtype=float,
     )
 
-    start_day = dto.entries[0].calendarDate.weekday()
+    start_day = model.entries[0].calendarDate.weekday()
 
     # Number of complete weeks and remaining days
     adjusted_weeks = adjust_weeks(sleep_data, start_day)
@@ -403,7 +409,7 @@ def adjust_weeks(sleep_data: npt.NDArray[np.float64], start_day: int):
 
 # XXX: Waffle chart for sleep duration not used ATM. -> Refactor to use same code as sleep score if needed
 # Creates a waffle chart of the values
-def _plot_waffle_chart_sleep_duration(plot: Axes, dto: GarminSleepResponse):
+def _plot_waffle_chart_sleep_duration(plot: Axes, dto: SleepMetrics):
     sleep_data = np.array(
         [entry.values.totalSleepSeconds / SECONDS_IN_HOUR for entry in dto.entries],
         dtype=float,

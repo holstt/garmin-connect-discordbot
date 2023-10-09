@@ -19,8 +19,9 @@ from src.registry import (
     FetcherRegistry,
     ResponseToDtoConverterRegistry,
 )
-from src.setup import (
+from src.registry_setup import (
     build_fetcher_registry,
+    build_plotting_strategies,
     build_to_dto_converter_registry,
     build_to_model_converter_registry,
     build_to_presenter_converter_registry,
@@ -60,6 +61,7 @@ def resolve(app_config: Config) -> Dependencies:
     to_dto_converter_registry = build_to_dto_converter_registry()
     to_model_converter_registry = build_to_model_converter_registry()
     to_vm_converter_registry = build_to_presenter_converter_registry()
+    plotting_strategies = build_plotting_strategies()
 
     garmin_service = GarminService(
         garmin_adapter,
@@ -73,7 +75,10 @@ def resolve(app_config: Config) -> Dependencies:
     )
 
     discord_api_adapter = DiscordApiAdapter(
-        discord_client, app_config.message_format, to_vm_converter_registry
+        discord_client,
+        app_config.message_format,
+        to_vm_converter_registry,
+        plotting_strategies,
     )
 
     summary_ready_handler = HealthSummaryReadyEventHandler(discord_api_adapter)
@@ -88,7 +93,10 @@ def resolve(app_config: Config) -> Dependencies:
         )
         # XXX: Error adapter gets unnecessary dependencies
         discord_error_adapter = DiscordApiAdapter(
-            discord_error_client, app_config.message_format, to_vm_converter_registry
+            discord_error_client,
+            app_config.message_format,
+            to_vm_converter_registry,
+            plotting_strategies,
         )
         error_handler = ExceptionOccurredEventHandler(discord_error_adapter)
 
