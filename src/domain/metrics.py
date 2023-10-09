@@ -5,7 +5,7 @@ from datetime import timedelta
 from io import BytesIO
 
 # T = TypeVar("T")
-from typing import Callable, Generic, Optional, TypeVar
+from typing import Any, Callable, Generic, Optional, TypeVar
 
 from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
 from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
@@ -174,14 +174,16 @@ class HrvMetrics(BaseMetric[Optional[int]]):
         return self._entries[-1].status == "BALANCED"
 
 
+@dataclass
+class MetricPlot:
+    id: str
+    data: BytesIO
+
+
+# Represents data for a health summary
 @dataclass(frozen=True)
 class HealthSummary:
     date: datetime.date
-    sleep: SleepMetrics
-    hrv: HrvMetrics
-    sleep_score: SleepScoreMetrics
-    rhr: RhrMetrics
-    bb: BodyBatteryMetrics
-    stress: StressMetrics
-    sleep_plot: BytesIO
-    metrics_plot: BytesIO
+    plots: list[MetricPlot]
+
+    metrics: list[BaseMetric[Any]]

@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Callable, NamedTuple
+from typing import Any, Callable, NamedTuple, TypeVar
 
 from src.domain.common import DatePeriod
 from src.domain.metrics import BaseMetric
@@ -71,7 +71,7 @@ class ResponseToDtoConverterRegistry:
         return func(data)
 
 
-DtoToConverterModel = Callable[
+DtoToModelConverter = Callable[
     [GarminResponseDto[GarminResponseEntryDto]], BaseMetric[Any]
 ]
 
@@ -80,13 +80,13 @@ class DtoToModelConverterRegistry:
     def __init__(self):
         super().__init__()
         self._converters: dict[
-            type[GarminResponseDto[GarminResponseEntryDto]], DtoToConverterModel
+            type[GarminResponseDto[GarminResponseEntryDto]], DtoToModelConverter
         ] = {}
 
     def register(
         self,
         dto_type: type[GarminResponseDto[GarminResponseEntryDto]],
-        converter: DtoToConverterModel,
+        converter: DtoToModelConverter,
     ):
         self._converters[dto_type] = converter
 
@@ -107,11 +107,11 @@ class ModelToPresenterConverterRegistry:
         self._converters: dict[type[BaseMetric[Any]], ModelToPresenterConverter] = {}
 
     def register(
-        self, instance: type[BaseMetric[Any]], converter: ModelToPresenterConverter
+        self, key: type[BaseMetric[Any]], converter: ModelToPresenterConverter
     ):
-        self._converters[instance] = converter
+        self._converters[key] = converter
 
-    def convert(self, instance: BaseMetric[Any]):
+    def convert(self, instance: BaseMetric[Any]) -> MetricViewModel:
         instance_type = type(instance)
         if instance_type not in self._converters:
             raise ValueError(f"No converter found for {instance_type}")

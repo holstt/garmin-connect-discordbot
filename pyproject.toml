@@ -17,6 +17,7 @@ pydantic = "^2.4.2"
 matplotlib = "^3.8.0"
 table2ascii = "^1.1.2"
 pydantic-settings = "^2.0.3"
+typeguard = "^4.1.5"
 
 
 [tool.poetry.group.dev.dependencies]

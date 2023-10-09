@@ -21,6 +21,8 @@ def create_metrics_gridplot(
     metrics: list[GarminResponseDto[GarminResponseEntryDto]],
     n: int | None = None,
 ) -> BytesIO:
+    # TODO: Return None if no data
+
     if n:
         metrics = [get_last_n(metric, n) for metric in metrics]
 

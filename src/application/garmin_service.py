@@ -28,11 +28,13 @@ class GarminService:
         client: GarminApiAdapter,
         fetcher_registry: FetcherRegistry,
         response_to_dto_converter_registry: ResponseToDtoConverterRegistry,
+        dto_to_model_converter_registry: DtoToModelConverterRegistry,
     ):
         super().__init__()
         self._client = client
         self._fetcher_registry = fetcher_registry
         self._response_to_dto_converter_registry = response_to_dto_converter_registry
+        self._dto_to_model_converter_registry = dto_to_model_converter_registry
 
     # Returns health stats for the past 7 days (including end date)
     # or None if today has not been registered yet for one of the metrics
@@ -76,31 +78,38 @@ class GarminService:
 
             dtos.append(dto)
 
+        # XXX: Handle if no data for a metric -> plotting strategy checks for presence of required metrics?
+        # XXX: A plotting registry has all available plotting strategies, each strategy checks for presence of required metrics and returns a plot if all metrics are present? I.e. we can add and a remove plots dynamically from setup
+        # plots: MetricPlot = []
+        # for plotting_strategy in plotting_strategy_registry.plotting_strategies:
+        #   plot = plotting_strategy.plot(dtos) # Log if no data for a metric
+        #   if plot:
+        #     plots.append(plot)
+
         # XXX: For now, get concrete types manually to be compatible with code below.
         dto_sleep = get_concrete_type(dtos, GarminSleepResponse)
         dto_sleep_score = get_concrete_type(dtos, GarminSleepScoreResponse)
-        dto_bb = get_concrete_type(dtos, GarminBbResponse)
-        dto_rhr = get_concrete_type(dtos, GarminRhrResponse)
-        dto_stress = get_concrete_type(dtos, GarminStressResponse)
-        dto_hrv = get_concrete_type(dtos, GarminHrvResponse)
-
         metrics_plot = create_metrics_gridplot(dtos, n=DAYS_IN_WEEK)
 
         sleep_plot = create_sleep_analysis_plot(
             dto_sleep, dto_sleep_score, ma_window_size=DAYS_IN_WEEK
         )
 
+        # Iterate dtos and convert to models
+        models: list[BaseMetric[Any]] = []
+        for dto in dtos:
+            model = self._dto_to_model_converter_registry.convert(dto)
+            models.append(model)
+
         # Create health summary
         health_summary = metrics.HealthSummary(
             date=period.end,
-            sleep=metrics.SleepMetrics(sleep_data=dto_sleep),
-            hrv=metrics.HrvMetrics(hrv_data=dto_hrv),
-            sleep_score=metrics.SleepScoreMetrics(sleep_data=dto_sleep_score),
-            rhr=metrics.RhrMetrics(rhr_data=dto_rhr),
-            bb=metrics.BodyBatteryMetrics(bb_data=dto_bb),
-            stress=metrics.StressMetrics(stress_data=dto_stress),
-            metrics_plot=metrics_plot,
-            sleep_plot=sleep_plot,
+            metrics=models,
+            # TODO: Strat resp. for creating metric plot with name
+            plots=[
+                metrics.MetricPlot("metrics_plot", metrics_plot),
+                metrics.MetricPlot("sleep_plot", sleep_plot),
+            ],
         )
 
         return health_summary
