@@ -175,7 +175,7 @@ def build_to_dto_converter(
 
 # Build available plotting strategies.
 # Each strategy checks for presence of required metrics and returns a plot if required metrics for that strategy are present
-def build_plotting_strategies() -> list[PlottingStrategy]:
+def build_plotting_strategies() -> Sequence[PlottingStrategy]:
     def build_sleep_plot(
         metrics: Sequence[BaseMetric[GarminResponseEntryDto, Any]]
     ) -> MetricPlot | None:
@@ -196,7 +196,7 @@ def build_plotting_strategies() -> list[PlottingStrategy]:
         return MetricPlot("sleep_plot", sleep_plot)
 
     def build_metrics_plot(
-        metrics: list[BaseMetric[GarminResponseEntryDto, Any]]
+        metrics: Sequence[BaseMetric[GarminResponseEntryDto, Any]]
     ) -> MetricPlot:
         days_to_plot = DAYS_IN_WEEK  # Configurable?
         # No specific metrics required, it's just a generic plot of all metrics

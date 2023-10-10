@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 from io import BytesIO
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, Sequence
 
 from src.domain.metrics import HrvMetrics, SimpleMetric, SleepMetrics
 from src.infra.garmin.dtos.garmin_response import GarminResponseEntryDto
@@ -8,7 +8,7 @@ from src.infra.garmin.dtos.garmin_response import GarminResponseEntryDto
 
 class HealthSummaryViewModel(NamedTuple):
     date: date
-    metrics: list["MetricViewModel"]
+    metrics: Sequence["MetricViewModel"]
 
 
 class DiffToTarget(NamedTuple):

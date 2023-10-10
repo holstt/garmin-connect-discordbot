@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import date
-from typing import Any
+from typing import Any, Sequence
 
 from pydantic import BaseModel, Field, TypeAdapter
 
@@ -28,8 +28,8 @@ class BbEntry(BaseModel, GarminResponseEntryDto):
     startTimestampLocal: str
     endTimestampLocal: str  # If today, will be time of last sync with watch
     # Each entry in list is a list of 2 ints: [timestamp, value]. To find max bb for the day, find the max value in the list
-    bodyBatteryValuesArray: list[list[int]]
-    bodyBatteryValueDescriptorDTOList: list[BodyBatteryValueDescriptorDTOListItem]
+    bodyBatteryValuesArray: Sequence[Sequence[int]]
+    bodyBatteryValueDescriptorDTOList: Sequence[BodyBatteryValueDescriptorDTOListItem]
 
 
 @dataclass

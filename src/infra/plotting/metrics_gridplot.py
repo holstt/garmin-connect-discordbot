@@ -1,6 +1,5 @@
 from datetime import date
-from random import random
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -9,7 +8,6 @@ from matplotlib.axes import Axes
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.figure import Figure
 
-import src.infra.garmin.dtos as dtos
 from src.consts import SECONDS_IN_HOUR
 from src.domain.metrics import (
     BaseMetric,
@@ -20,17 +18,7 @@ from src.domain.metrics import (
     SleepScoreMetrics,
     StressMetrics,
 )
-from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
-from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
-from src.infra.garmin.dtos.garmin_response import (
-    GarminResponseDto,
-    GarminResponseEntryDto,
-)
-from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse
-from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
-from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
-from src.infra.garmin.dtos.garmin_steps_response import GarminStepsResponse
-from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
+from src.infra.garmin.dtos.garmin_response import GarminResponseEntryDto
 from src.utils import get_moving_average
 
 PLOT_SIZE = (8, 9)
@@ -39,7 +27,7 @@ PLOT_SIZE = (8, 9)
 class _GridPlotMetric(NamedTuple):
     name: str
     color: str
-    values: list[float | None]
+    values: Sequence[float | None]
 
     def get_avg(self) -> float:
         return sum([val for val in self.values if val]) / len(self.values)
@@ -47,7 +35,7 @@ class _GridPlotMetric(NamedTuple):
 
 # Creates subplot for each metric in a single figure
 def plot(
-    metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]],
+    metrics_data: Sequence[BaseMetric[GarminResponseEntryDto, Any]],
 ) -> Figure:
     # Just get the dates from one of the metrics (they should all be the same)
     dates = [entry.calendarDate for entry in metrics_data[0].entries]
@@ -75,8 +63,8 @@ def plot(
 
 
 def _add_subplot(
-    dates: list[date],
-    weekdays: list[str],
+    dates: Sequence[date],
+    weekdays: Sequence[str],
     plot_metric: _GridPlotMetric,
     ax: Axes,
 ):
@@ -134,7 +122,7 @@ def _add_background_plot(
     # Now calculate the 7-day moving average for the full values
     MA_SIZE = 7
     # TODO: Use prev val if possible
-    plot_metric_full_no_none: list[float] = [
+    plot_metric_full_no_none: Sequence[float] = [
         val if val else 0 for val in plot_metric_full.values
     ]
     moving_avgs = get_moving_average(plot_metric_full_no_none, MA_SIZE)
@@ -147,7 +135,7 @@ def _add_background_plot(
     )
 
 
-def _transform(metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]]):
+def _transform(metrics_data: Sequence[BaseMetric[GarminResponseEntryDto, Any]]):
     return [get_plot_data(metric) for metric in metrics_data]
 
 
@@ -210,7 +198,7 @@ def get_plot_data(metric: BaseMetric[GarminResponseEntryDto, Any]) -> _GridPlotM
 
 
 # XXX: Not used. Solid colors seem to be better?
-def _plot_with_colormap(plot_metric: _GridPlotMetric, dates: list[date], ax: Axes):
+def _plot_with_colormap(plot_metric: _GridPlotMetric, dates: Sequence[date], ax: Axes):
     values: npt.NDArray[np.float64] = np.array(plot_metric.values, dtype=np.float64)
 
     # Create a linear segmented colormap from white to the input hex color

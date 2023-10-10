@@ -1,7 +1,7 @@
 import logging
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Sequence, Union
 
 import requests  # type: ignore
 from garminconnect import Garmin  # type: ignore
@@ -16,7 +16,7 @@ from src.setup.garmin_endpoints import GarminEndpoint
 logger = logging.getLogger(__name__)
 
 # type alias for json
-JsonResponseType = Union[dict[Any, Any], list[Any]]
+JsonResponseType = Union[dict[Any, Any], Sequence[Any]]
 
 
 class GarminApiClientError(Exception):

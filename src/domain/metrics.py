@@ -6,7 +6,7 @@ from datetime import timedelta
 from io import BytesIO
 
 # T = TypeVar("T")
-from typing import Any, Callable, Generic, Optional, TypeVar
+from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 
 from src.consts import DAYS_IN_WEEK
 from src.infra.garmin.dtos.garmin_bb_response import BbEntry, GarminBbResponse
@@ -27,7 +27,7 @@ L = TypeVar("L", covariant=True)  # List type
 R = TypeVar("R")  # Return type
 
 
-def average_by(items: list[L], prop_selector: Callable[[L], float]) -> float:
+def average_by(items: Sequence[L], prop_selector: Callable[[L], float]) -> float:
     total = sum(prop_selector(item) for item in items)
     return total / len(items) if items else 0.0
 
@@ -35,7 +35,7 @@ def average_by(items: list[L], prop_selector: Callable[[L], float]) -> float:
 class BaseMetric(ABC, Generic[L, R]):
     def __init__(
         self,
-        entries: list[L],
+        entries: Sequence[L],
         selector: Callable[[L], R],
         is_higher_better: bool = True,
     ):
@@ -65,7 +65,7 @@ class BaseMetric(ABC, Generic[L, R]):
 class SimpleMetric(BaseMetric[L, float], ABC):
     def __init__(
         self,
-        entries: list[L],
+        entries: Sequence[L],
         selector: Callable[[L], float],
         is_higher_better: bool = True,
     ):
@@ -198,5 +198,5 @@ class HrvMetrics(BaseMetric[HrvSummary, Optional[int]]):
 @dataclass(frozen=True)
 class HealthSummary:
     date: datetime.date
-    # plots: list[MetricPlot]
-    metrics: list[BaseMetric[GarminResponseEntryDto, Any]]
+    # plots: Sequence[MetricPlot]
+    metrics: Sequence[BaseMetric[GarminResponseEntryDto, Any]]

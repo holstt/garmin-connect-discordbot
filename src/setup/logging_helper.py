@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import Sequence
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def add_password_filter(password_to_redact: str):
 # Formatter redacts any matching patterns from the final log messages, but keeps the original formatting
 class RedactingFormatter(logging.Formatter):
     # Get the original formatter and the patterns to redact
-    def __init__(self, orig_formatter: logging.Formatter, patterns: list[str]):
+    def __init__(self, orig_formatter: logging.Formatter, patterns: Sequence[str]):
         super().__init__()
         self.orig_formatter = orig_formatter
         self._patterns = patterns

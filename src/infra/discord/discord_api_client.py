@@ -1,5 +1,6 @@
 import logging
 from io import BytesIO
+from typing import Sequence
 
 from discord_webhook import DiscordEmbed, DiscordWebhook
 
@@ -49,7 +50,7 @@ class DiscordApiClient:
         self._execute()
 
     # Attach multiple images to a single message
-    def send_images(self, images: list[BytesIO], names: list[str]) -> None:
+    def send_images(self, images: Sequence[BytesIO], names: Sequence[str]) -> None:
         for image, name in zip(images, names):
             self._base_client.add_file(file=image.read(), filename=name)
         self._execute()

@@ -45,7 +45,7 @@ class GarminService:
         return self._try_get_summary(period)
 
     def _try_get_summary(self, period: DatePeriod) -> Optional[metrics.HealthSummary]:
-        dtos: list[GarminResponseDto[GarminResponseEntryDto]] = []
+        dtos: Sequence[GarminResponseDto[GarminResponseEntryDto]] = []
         for metric in self._metrics_to_include:
             # Fetch this metric data
             response = self._fetcher_registry.fetch(metric, period)
@@ -71,7 +71,7 @@ class GarminService:
             dtos.append(dto)
 
         # Iterate dtos and convert to models
-        models: list[BaseMetric[GarminResponseEntryDto, Any]] = []
+        models: Sequence[BaseMetric[GarminResponseEntryDto, Any]] = []
         for dto in dtos:
             model = self._dto_to_model_converter_registry.convert(dto)
             models.append(model)

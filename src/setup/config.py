@@ -47,7 +47,7 @@ class Config(BaseSettings):
     @validator("metrics", pre=True)
     def validate_metrics(
         cls, metrics: Sequence[GarminMetricId]
-    ) -> list[GarminMetricId]:
+    ) -> Sequence[GarminMetricId]:
         # Remove any duplicates (avoid using set to keep order)
         metrics = list(dict.fromkeys(metrics))
         return metrics

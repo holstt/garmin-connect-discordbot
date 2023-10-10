@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Callable, NamedTuple, TypeVar
+from typing import Any, Callable, NamedTuple, Sequence, TypeVar
 
 from src.domain.common import DatePeriod
 from src.domain.metrics import BaseMetric
@@ -124,5 +124,5 @@ class ModelToVmConverterRegistry:
 
 # Given a list of models, return a plot if required metrics are available, otherwise None
 PlottingStrategy = Callable[
-    [list[BaseMetric[GarminResponseEntryDto, Any]]], MetricPlot | None
+    [Sequence[BaseMetric[GarminResponseEntryDto, Any]]], MetricPlot | None
 ]

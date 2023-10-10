@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import Any
+from typing import Any, Sequence
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -17,7 +17,7 @@ from src.infra.garmin.dtos.garmin_response import (
 
 
 def create_metrics_gridplot(
-    metrics: list[BaseMetric[GarminResponseEntryDto, Any]],
+    metrics: Sequence[BaseMetric[GarminResponseEntryDto, Any]],
     n: int | None = None,
 ) -> BytesIO:
     # TODO: Return None if no data

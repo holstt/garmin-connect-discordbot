@@ -1,6 +1,7 @@
 import enum
 import logging
 from datetime import date
+from typing import Sequence
 
 from discord_webhook import DiscordEmbed
 from table2ascii import Alignment, PresetStyle, table2ascii
@@ -66,7 +67,7 @@ class DiscordMessageTable(DiscordMessageBase):
         table = f"```{table}```"
         super().__init__(summary.date, table)
 
-    def to_table_row(self, view_model: MetricViewModel) -> list[str]:
+    def to_table_row(self, view_model: MetricViewModel) -> Sequence[str]:
         return [
             view_model.icon,
             f"{view_model.latest}{view_model.out_of_max}",

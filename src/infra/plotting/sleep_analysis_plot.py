@@ -54,11 +54,11 @@ class SleepStage(NamedTuple):
 # Data suitable for plotting
 # dates index maps to same index in SleepStage.values
 class SleepEachDay(NamedTuple):
-    dates: list[datetime.date]
-    sleep_stages: list[SleepStage]
+    dates: Sequence[datetime.date]
+    sleep_stages: Sequence[SleepStage]
 
     # total sleep = all sleep stages for that day combined except awake
-    daily_total_sleep: list[float]
+    daily_total_sleep: Sequence[float]
     avg_total_sleep: float
 
     def get_last_n(self, n: int):

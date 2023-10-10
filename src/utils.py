@@ -90,8 +90,10 @@ def find_first_of_type(items: Sequence[Any], type: type[T]) -> T | None:
 # Returns a list of moving averages for a given list of values
 # A Value will be None if there are not enough values to calculate the moving average
 # The first index with a non-None value will be at index window_size - 1
-def get_moving_average(values: Sequence[float], window_size: int) -> list[float | None]:
-    moving_averages: list[Optional[float]] = []
+def get_moving_average(
+    values: Sequence[float], window_size: int
+) -> Sequence[float | None]:
+    moving_averages: Sequence[Optional[float]] = []
 
     for i in range(1, len(values) + 1):
         if i < window_size:

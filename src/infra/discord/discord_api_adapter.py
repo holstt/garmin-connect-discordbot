@@ -1,5 +1,5 @@
 from io import BytesIO
-from typing import Callable
+from typing import Callable, Sequence
 
 from discord_webhook import DiscordEmbed
 
@@ -24,7 +24,7 @@ class DiscordApiAdapter:
         discord_client: DiscordApiClient,
         message_strategy: Callable[[HealthSummaryViewModel], DiscordEmbed],
         to_vm_registry: ModelToVmConverterRegistry,
-        plotting_strategies: list[PlottingStrategy],
+        plotting_strategies: Sequence[PlottingStrategy],
     ):
         super().__init__()
         self._client = discord_client
@@ -36,7 +36,7 @@ class DiscordApiAdapter:
     # Send health summary to discord webhook
     def send_health_summary(self, summary: HealthSummary) -> None:
         # Turn into view models
-        vms: list[MetricViewModel] = []
+        vms: Sequence[MetricViewModel] = []
         for metric in summary.metrics:
             vm = self._to_vm_registry.convert(metric)
             vms.append(vm)
@@ -51,7 +51,7 @@ class DiscordApiAdapter:
         self._client.send_message(discord_message)
 
         # Create plots for all strategies XXX: If config?
-        plots: list[MetricPlot] = []
+        plots: Sequence[MetricPlot] = []
         for strategy in self._plotting_strategies:
             plot = strategy(summary.metrics)
             if plot:
@@ -62,7 +62,7 @@ class DiscordApiAdapter:
     def send_image(self, image: BytesIO, name: str) -> None:
         self._client.send_image(image, name)
 
-    def send_images(self, images: list[MetricPlot]) -> None:
+    def send_images(self, images: Sequence[MetricPlot]) -> None:
         self._client.send_images(
             [plot.data for plot in images], [f"{plot.id}.png" for plot in images]
         )

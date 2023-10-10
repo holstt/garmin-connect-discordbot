@@ -1,6 +1,7 @@
 import logging
 import traceback
 from datetime import timedelta
+from typing import Sequence
 
 import src.setup.config as config
 import src.setup.dependencies as dependency_resolver
@@ -33,7 +34,7 @@ def main(app_config: Config) -> None:
         # Notify discord on exception error if handler configured
         if error_handler := dependencies.error_handler:
             stack_trace = traceback.format_exc()
-            error_handler(exception=e, stack_trace=stack_trace)
+            error_handler(exception=e, stack_trace=stack_trace)  # type: ignore
         raise e  # Re-raise to exit program
 
 
