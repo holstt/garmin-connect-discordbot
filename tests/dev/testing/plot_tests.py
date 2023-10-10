@@ -4,6 +4,7 @@ from pathlib import Path
 
 from matplotlib import pyplot as plt
 
+from src.domain.metrics import SleepMetrics, SleepScoreMetrics
 from src.infra.garmin.dtos import *
 from src.infra.plotting import metrics_gridplot
 from src.infra.plotting.sleep_analysis_plot import plot as plot_sleep
@@ -19,18 +20,24 @@ SUB_DIR = "all_metrics"
 
 # LOAD DATA
 # Load necessary dtos from saved json files (remember to run json_dump_endpoint.py first)
-# sleep_dto = load_dto_from_file(GarminSleepResponse)
-# sleep_score_dto = load_dto_from_file(GarminSleepScoreResponse)
+sleep_dto = load_dto_from_file(GarminSleepResponse)
+sleep_score_dto = load_dto_from_file(GarminSleepScoreResponse)
+
+sleep_metric = SleepMetrics(sleep_dto)
+sleep_score_metric = SleepScoreMetrics(sleep_score_dto)
+
 # bb_dto = load_dto_from_file(GarminBbResponse)
 # rhr_dto = load_dto_from_file(GarminRhrResponse)
 # steps_dto = load_dto_from_file(GarminStepsResponse)
 # hrv_dto = load_dto_from_file(GarminHrvResponse)
 
-stress_dto = load_dto_from_file(GarminStressResponse)
+# stress_dto = load_dto_from_file(GarminStressResponse)
 
 # EXECUTE PLOT FUNCTION
-fig = plot_stress(stress_dto)
+# fig = plot_stress(stress_dto)
 # fig = plot_sleep(sleep_dto, sleep_score_dto, ma_window_size=7)
+
+fig = plot_sleep(sleep_metric, sleep_score_metric, ma_window_size=7)
 
 # metrics_plot.plot(
 #     metrics_plot.MetricsData(

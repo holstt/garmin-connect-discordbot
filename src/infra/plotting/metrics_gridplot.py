@@ -1,4 +1,5 @@
 from datetime import date
+from random import random
 from typing import Any, NamedTuple, Optional
 
 import numpy as np
@@ -30,6 +31,7 @@ from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
 from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
 from src.infra.garmin.dtos.garmin_steps_response import GarminStepsResponse
 from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
+from src.utils import get_moving_average
 
 PLOT_SIZE = (8, 9)
 
@@ -37,30 +39,32 @@ PLOT_SIZE = (8, 9)
 class _GridPlotMetric(NamedTuple):
     name: str
     color: str
-    values: list[Optional[float]]
+    values: list[float | None]
 
     def get_avg(self) -> float:
         return sum([val for val in self.values if val]) / len(self.values)
 
 
 # Creates subplot for each metric in a single figure
-def plot(metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]]) -> Figure:
+def plot(
+    metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]],
+) -> Figure:
     # Just get the dates from one of the metrics (they should all be the same)
     dates = [entry.calendarDate for entry in metrics_data[0].entries]
     weekdays = [date.strftime("%a") for date in dates]
 
-    plot_data = _transform(metrics_data)
+    plot_metrics = _transform(metrics_data)
 
     fig = plt.figure(figsize=PLOT_SIZE)
 
     COLS = 2
     ROWS = (
-        len(plot_data) // COLS
-        if len(plot_data) % COLS == 0
-        else len(plot_data) // COLS + 1
+        len(plot_metrics) // COLS
+        if len(plot_metrics) % COLS == 0
+        else len(plot_metrics) // COLS + 1
     )
 
-    for idx, plot_metric in enumerate(plot_data, start=1):
+    for idx, plot_metric in enumerate(plot_metrics, start=1):
         ax = plt.subplot(ROWS, COLS, idx)
         _add_subplot(dates, weekdays, plot_metric, ax)
 
@@ -71,7 +75,10 @@ def plot(metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]]) -> Figure:
 
 
 def _add_subplot(
-    dates: list[date], weekdays: list[str], plot_metric: _GridPlotMetric, ax: Axes
+    dates: list[date],
+    weekdays: list[str],
+    plot_metric: _GridPlotMetric,
+    ax: Axes,
 ):
     # _plot_with_colormap(plot_metric, dates, ax)
 
@@ -90,6 +97,9 @@ def _add_subplot(
         y=avg_value, color="gray", linestyle="--", label=f"Average: {avg_value:.1f}"
     )
 
+    # Add "background" line with full metric values #XXX: Not used atm - not sure if it's useful
+    # _add_background_plot(plot_metric, ax, plot_metric_full)
+
     # Remove top and right spines
     # ax.spines["top"].set_visible(False)
     # ax.spines["right"].set_visible(False)
@@ -101,6 +111,40 @@ def _add_subplot(
     # ax.grid(True)
     # make grid lines more transparent
     ax.grid(alpha=0.50)
+
+
+def _add_background_plot(
+    plot_metric: _GridPlotMetric, ax: Axes, plot_metric_full: _GridPlotMetric
+):
+    ax_background: Axes = ax.twiny()  # type: ignore
+
+    # Keep existing axis limits
+    vals = [val for val in plot_metric.values if val]
+    min_val = min(vals)
+    max_val = max(vals)
+    val_range = max_val - min_val
+    padding = (
+        val_range * 0.2
+    )  # Adjust padding of foreground plot. Larger values will ensure more of the background plot is visible
+    plt.ylim(
+        min_val - padding,
+        max_val + padding,
+    )
+
+    # Now calculate the 7-day moving average for the full values
+    MA_SIZE = 7
+    # TODO: Use prev val if possible
+    plot_metric_full_no_none: list[float] = [
+        val if val else 0 for val in plot_metric_full.values
+    ]
+    moving_avgs = get_moving_average(plot_metric_full_no_none, MA_SIZE)
+
+    ax_background.plot(
+        range(len(moving_avgs)),
+        moving_avgs,  # type: ignore
+        color=plot_metric.color,
+        alpha=0.25,
+    )
 
 
 def _transform(metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]]):

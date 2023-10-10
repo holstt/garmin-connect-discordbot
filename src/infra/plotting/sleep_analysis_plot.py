@@ -10,6 +10,7 @@ import numpy.typing as npt
 from matplotlib import pyplot as plt
 from matplotlib.axes import Axes
 from matplotlib.colors import LinearSegmentedColormap, Normalize
+from matplotlib.figure import Figure
 from matplotlib.gridspec import GridSpec
 from matplotlib.patches import FancyBboxPatch
 from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore
@@ -17,6 +18,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore
 from src.consts import DAYS_IN_WEEK, FOUR_WEEKS, SECONDS_IN_HOUR
 from src.domain.metrics import SleepMetrics, SleepScoreMetrics
 from src.infra.garmin.dtos.garmin_sleep_response import SleepEntry
+from src.utils import get_moving_average
 
 logger = logging.getLogger(__name__)
 
@@ -85,7 +87,7 @@ def plot(
     sleep: SleepMetrics,
     sleep_score: SleepScoreMetrics,
     ma_window_size: int,  # Window size of moving average
-):
+) -> Figure:
     fig = plt.figure(figsize=PLOT_SIZE)
     gs = GridSpec(2, 2, width_ratios=[1, 0.5], height_ratios=[3, 2])
     week_plot = plt.subplot(gs[0, :])  # merge columns in this row
@@ -139,7 +141,7 @@ def plot_scores_line(
 
     score_plot_ma.plot(
         [entry.calendarDate for entry in sleep_score.entries[-limit:]],  # type: ignore
-        _get_moving_average(  # type: ignore
+        get_moving_average(  # type: ignore
             [entry.value for entry in sleep_score.entries[-limit:]], ma_window_size
         ),
         color="black",
@@ -258,7 +260,7 @@ def _transform_sleep_stages(sleep: SleepMetrics, window_size: int) -> SleepEachD
             name=name,
             color=color,
             values=values,
-            values_ma=_get_moving_average(values, window_size),
+            values_ma=get_moving_average(values, window_size),
         )
 
     # Create sleep stages
@@ -293,19 +295,6 @@ def _transform_sleep_stages(sleep: SleepMetrics, window_size: int) -> SleepEachD
     )
 
 
-def _get_moving_average(
-    values: Sequence[float], window_size: int
-) -> list[Optional[float]]:
-    moving_averages: list[Optional[float]] = []
-
-    for i in range(1, len(values) + 1):
-        if i < window_size:
-            moving_averages.append(None)
-        else:
-            moving_averages.append(sum(values[i - window_size : i]) / window_size)
-    return moving_averages
-
-
 def _plot_waffle_chart_sleep_score(ax: Axes, model: SleepScoreMetrics):
     sleep_data = np.array(
         [entry.value for entry in model.entries],
@@ -328,36 +317,26 @@ def _plot_waffle_chart_sleep_score(ax: Axes, model: SleepScoreMetrics):
     # ax.set_facecolor("lightgrey")  # type: ignore
     # ax.set_facecolor("#F0F0F0")  # type: ignore
 
-    padding = 0.4
-    linewidth = 4
+    padding = 0.4  # Determines the border radius of the rectangles
+    linewidth = 4  # Determines padding between rectangles (as border width)
     color_background = "white"
-    # background = "#F0F0F0"
-    edgecolor = color_background
+    edgecolor = color_background  # Color of line
 
     # Create a custom normalization with the range of sleep scores (0 to 100)
     score_norm = Normalize(vmin=0, vmax=100, clip=True)
     for week_num in range(adjusted_weeks.shape[1]):
         for day_num in range(adjusted_weeks.shape[0]):
             sleep_score = adjusted_weeks[day_num, week_num]
-            if not np.isnan(
-                sleep_score
-            ):  # Check if the value is not nan before drawing rectangle
+            # Check if the value is not nan before drawing rectangle
+            if not np.isnan(sleep_score):
+                # Get color of rectangle from colormap
                 color = colormap(score_norm(sleep_score))  # type: ignore
-                # rect = plt.Rectangle(  # type: ignore
-                #     xy=(week_num, 6 - day_num),
-                #     width=1,
-                #     height=1,
-                #     facecolor=color,  # type: ignore
-                #     edgecolor="white",
-                #     linewidth=0.8,
-                # )
-
                 rect = FancyBboxPatch(
                     (week_num + padding / 2, DAYS_IN_WEEK - 1 - day_num + padding / 2),
                     1 - padding,
                     1 - padding,
                     boxstyle="round,pad=" + str(padding / 2),
-                    facecolor=color,  # type: ignore
+                    facecolor=color,
                     edgecolor=edgecolor,
                     linewidth=linewidth,
                 )

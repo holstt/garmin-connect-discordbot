@@ -21,7 +21,6 @@ def create_metrics_gridplot(
     n: int | None = None,
 ) -> BytesIO:
     # TODO: Return None if no data
-
     if n:
         metrics = [metric.with_last_n(n) for metric in metrics]
 
