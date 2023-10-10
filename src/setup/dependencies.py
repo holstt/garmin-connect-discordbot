@@ -9,23 +9,16 @@ from src.infra.discord.discord_api_client import DiscordApiClient
 from src.infra.garmin.garmin_api_adapter import GarminApiAdapter
 from src.infra.garmin.garmin_api_client import GarminApiClient
 from src.infra.time_provider import TimeProvider
-from src.presentation.event_handlers import (
-    ExceptionOccurredEventHandler,
-    HealthSummaryReadyEventHandler,
-)
+from src.presentation.event_handlers import (ExceptionOccurredEventHandler,
+                                             HealthSummaryReadyEventHandler)
 from src.setup.config import Config
-from src.setup.registry import (
-    DtoToModelConverterRegistry,
-    FetcherRegistry,
-    ResponseToDtoConverterRegistry,
-)
-from src.setup.registry_setup import (
-    build_fetcher_registry,
-    build_plotting_strategies,
-    build_to_dto_converter_registry,
-    build_to_model_converter_registry,
-    build_to_presenter_converter_registry,
-)
+from src.setup.registry import (DtoToModelConverterRegistry, FetcherRegistry,
+                                ResponseToDtoConverterRegistry)
+from src.setup.registry_setup import (build_fetcher_registry,
+                                      build_plotting_strategies,
+                                      build_to_dto_converter_registry,
+                                      build_to_model_converter_registry,
+                                      build_to_presenter_converter_registry)
 
 # TODO: Use DI framework
 

@@ -7,7 +7,8 @@ from attr import has
 from discord_webhook import DiscordEmbed
 from table2ascii import Alignment, PresetStyle, table2ascii
 
-import src.presentation.metric_msg_builder as builder
+import src.presentation.message_builder as builder
+from src.presentation.view_models import HealthSummaryViewModel
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +39,10 @@ class MessageFormat(enum.Enum):
 
 
 # Health summary discord dto/message
+# TODO: A MessageStrategy creates a discord message given a HealthSummaryViewModel. Strategy is chosen based on the loaded user config and injected into relevant discord message service
+# i.e. --> MessageStrategy = Callable[[HealthSummaryViewModel], DiscordEmbed]
 class DiscordHealthSummaryMessage(DiscordEmbed):
-    def __init__(self, summary: builder.HealthSummaryViewModel, format: MessageFormat):
+    def __init__(self, summary: HealthSummaryViewModel, format: MessageFormat):
         title = f"Garmin Health Metrics, {summary.date.strftime('%d-%m-%Y')}"
         msg = ""
 
@@ -56,6 +59,7 @@ class DiscordHealthSummaryMessage(DiscordEmbed):
         )
 
 
+# Greates a discord message with metrics in a list
 def _create_lines(msg: str, view_models: list[builder.MetricViewModel]):
     for i, view_model in enumerate(view_models):
         msg += view_model.to_line()
@@ -77,6 +81,7 @@ def _create_lines(msg: str, view_models: list[builder.MetricViewModel]):
 #     return "\n".join(lines[1:-1])  # Skip the first and last lines
 
 
+# Creates a discord message with metrics in a table
 def _create_table(msg: str, view_models: list[builder.MetricViewModel]):
     style = PresetStyle.borderless
 

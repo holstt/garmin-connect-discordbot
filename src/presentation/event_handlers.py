@@ -6,6 +6,7 @@ from src.infra.discord.discord_api_adapter import DiscordApiAdapter
 logger = logging.getLogger(__name__)
 
 
+# Gets notified by infra layer when a new health summary is ready
 class HealthSummaryReadyEventHandler:
     def __init__(self, discord_service: DiscordApiAdapter):
         super().__init__()

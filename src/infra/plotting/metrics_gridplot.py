@@ -9,9 +9,10 @@ from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.figure import Figure
 
 import src.infra.garmin.dtos as dtos
+from src.consts import SECONDS_IN_HOUR
 from src.domain.metrics import (
     BaseMetric,
-    BodyBatteryMetrics,
+    BbMetrics,
     HrvMetrics,
     RhrMetrics,
     SleepMetrics,
@@ -30,13 +31,16 @@ from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreRe
 from src.infra.garmin.dtos.garmin_steps_response import GarminStepsResponse
 from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
 
-SECONDS_IN_HOUR = 3600
+PLOT_SIZE = (8, 9)
 
 
 class _GridPlotMetric(NamedTuple):
     name: str
     color: str
     values: list[Optional[float]]
+
+    def get_avg(self) -> float:
+        return sum([val for val in self.values if val]) / len(self.values)
 
 
 # Creates subplot for each metric in a single figure
@@ -47,7 +51,7 @@ def plot(metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]]) -> Figure:
 
     plot_data = _transform(metrics_data)
 
-    fig = plt.figure(figsize=(11, 13))
+    fig = plt.figure(figsize=PLOT_SIZE)
 
     COLS = 2
     ROWS = (
@@ -81,11 +85,9 @@ def _add_subplot(
     ax.plot(latest_date, latest_val, color=plot_metric.color, marker="o", markeredgewidth=2, markeredgecolor="black", linestyle="", markersize=12)  # type: ignore
 
     # Add horizontal line with the metric average
-    avg_value = sum([val for val in plot_metric.values if val]) / len(
-        plot_metric.values
-    )
+    avg_value = plot_metric.get_avg()
     ax.axhline(
-        y=avg_value, color="gray", linestyle="--", label=f"Average: {avg_value:.0f}"
+        y=avg_value, color="gray", linestyle="--", label=f"Average: {avg_value:.1f}"
     )
 
     # Remove top and right spines
@@ -129,7 +131,7 @@ def get_plot_data(metric: BaseMetric[GarminResponseEntryDto, Any]) -> _GridPlotM
             color="#8c564b",
             values=[entry.values.overallStressLevel for entry in metric.entries],
         )
-    if isinstance(metric, BodyBatteryMetrics):
+    if isinstance(metric, BbMetrics):
         return _GridPlotMetric(
             name="Body Battery",
             color="#e377c2",

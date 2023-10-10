@@ -1,16 +1,13 @@
 import logging
-from typing import Protocol, Sequence, cast
+from typing import Sequence, cast
 
-from typeguard import check_type
-
-import src.presentation.metric_msg_builder as builder
+import src.presentation.message_builder as builder
 from src.consts import DAYS_IN_WEEK
 from src.domain.common import DatePeriod
 from src.domain.metrics import (
-    BodyBatteryMetrics,
+    BbMetrics,
     HrvMetrics,
     RhrMetrics,
-    SimpleMetric,
     SleepMetrics,
     SleepScoreMetrics,
     StressMetrics,
@@ -31,7 +28,7 @@ from src.infra.plotting.plotting_service import (
     create_sleep_analysis_plot,
 )
 from src.setup.registry import *
-from src.utils import find_first_of_type, find_first_of_type_or_fail
+from src.utils import find_first_of_type
 
 logger = logging.getLogger(__name__)
 # TODO: Create class resp. for adding a metric to the pipeline
@@ -96,9 +93,7 @@ def build_to_model_converter_registry() -> DtoToModelConverterRegistry:
         GarminSleepScoreResponse,
         lambda dto: SleepScoreMetrics(cast(GarminSleepScoreResponse, dto)),
     )
-    reg.register(
-        GarminBbResponse, lambda dto: BodyBatteryMetrics(cast(GarminBbResponse, dto))
-    )
+    reg.register(GarminBbResponse, lambda dto: BbMetrics(cast(GarminBbResponse, dto)))
     reg.register(
         GarminHrvResponse, lambda dto: HrvMetrics(cast(GarminHrvResponse, dto))
     )
@@ -115,35 +110,38 @@ def build_to_presenter_converter_registry() -> ModelToVmConverterRegistry:
 
     reg.register(
         SleepMetrics,
-        lambda model: builder.sleep("Sleep", "💤", cast(SleepMetrics, model)),
+        lambda model: builder.sleep_message("Sleep", "💤", cast(SleepMetrics, model)),
     )
     reg.register(
         SleepScoreMetrics,
-        lambda model: builder.metric(
+        lambda model: builder.metric_message(
             "Sleep Score", "😴", cast(SleepScoreMetrics, model), 100
         ),
     )
     reg.register(
         RhrMetrics,
         # NB: Regular heart emoji messes up the table formatting.
-        lambda model: builder.metric("Resting HR", "💗", cast(RhrMetrics, model)),
+        lambda model: builder.metric_message(
+            "Resting HR", "💗", cast(RhrMetrics, model)
+        ),
     )
     reg.register(
-        HrvMetrics, lambda model: builder.hrv("HRV", "💓", cast(HrvMetrics, model))
+        HrvMetrics,
+        lambda model: builder.hrv_message("HRV", "💓", cast(HrvMetrics, model)),
     )
     reg.register(
-        BodyBatteryMetrics,
-        lambda model: builder.metric(
+        BbMetrics,
+        lambda model: builder.metric_message(
             "Body Battery",
             "⚡",
-            cast(BodyBatteryMetrics, model),
+            cast(BbMetrics, model),
             100
             # "Body Battery", "⚡", check_type(BodyBatteryMetrics, model), 100 # check_type modifies properties of model instance, why?
         ),
     )
     reg.register(
         StressMetrics,
-        lambda model: builder.metric(
+        lambda model: builder.metric_message(
             "Stress Level", "🤯", cast(StressMetrics, model), 100
         ),
     )

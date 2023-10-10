@@ -12,7 +12,7 @@ from src.infra.garmin.garmin_api_client import (
     GarminEndpoint,
     JsonResponseType,
 )
-from src.presentation.metric_msg_builder import MetricPlot, MetricViewModel
+from src.presentation.view_models import MetricPlot, MetricViewModel
 from src.setup.garmin_metrid_ids import GarminMetricId
 
 # Unique identifier for each Garmin metric.

@@ -9,7 +9,7 @@ from src.presentation.discord_messages import (
     DiscordHealthSummaryMessage,
     MessageFormat,
 )
-from src.presentation.metric_msg_builder import (
+from src.presentation.view_models import (
     HealthSummaryViewModel,
     MetricPlot,
     MetricViewModel,

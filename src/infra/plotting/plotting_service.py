@@ -11,12 +11,6 @@ from src.infra.garmin.dtos.garmin_response import (
     GarminResponseDto,
     GarminResponseEntryDto,
 )
-from src.presentation.metric_msg_builder import MetricPlot
-
-# def get_last_n(
-#     metric: BaseMetric[GarminResponseEntryDto, Any], n: int
-# ) -> BaseMetric[GarminResponseEntryDto, Any]:
-#     return type(metric)(metric.entries[-n:]) # XXX: Fix
 
 
 def create_metrics_gridplot(

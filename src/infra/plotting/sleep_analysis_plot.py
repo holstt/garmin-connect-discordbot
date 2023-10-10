@@ -1,7 +1,7 @@
 import datetime
 import logging
 from enum import Enum
-from typing import NamedTuple, Optional
+from typing import Callable, NamedTuple, Optional, Sequence
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -14,51 +14,65 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.patches import FancyBboxPatch
 from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore
 
-from src.consts import DAYS_IN_WEEK, SECONDS_IN_HOUR
+from src.consts import DAYS_IN_WEEK, FOUR_WEEKS, SECONDS_IN_HOUR
 from src.domain.metrics import SleepMetrics, SleepScoreMetrics
+from src.infra.garmin.dtos.garmin_sleep_response import SleepEntry
 
 logger = logging.getLogger(__name__)
 
 # ALPHA = 0.7
 
+PLOT_SIZE = (12, 9)
 
-class Colors(Enum):
+
+class StageColors(Enum):
     DEEP = "#004BA0"
     LIGHT = "#1976D2"
     REM = "#AC06BC"
     AWAKE = "#ED79D5"
 
 
-class SegmentNames(Enum):
+class StageNames(Enum):
     DEEP = "Deep sleep"
     LIGHT = "Light Sleep"
     REM = "Rem Sleep"
     AWAKE = "Awake Sleep"
 
 
-class Segment(NamedTuple):
+# Represent all daily values for a particular sleep stage
+class SleepStage(NamedTuple):
     name: str
-    color: str
-    values: list[float]
-    values_ma: list[Optional[float]]
+    color: str  # color of this kind of stage in hex
+    values: Sequence[float]  # duration in this stage for each day
+    values_ma: Sequence[
+        Optional[float]
+    ]  # moving average of duration in this stage for each day
 
 
-class PlottingData(NamedTuple):
+# Data suitable for plotting
+# dates index maps to same index in SleepStage.values
+class SleepEachDay(NamedTuple):
     dates: list[datetime.date]
-    segments: list[Segment]
+    sleep_stages: list[SleepStage]
+
+    # total sleep = all sleep stages for that day combined except awake
+    daily_total_sleep: list[float]
+    avg_total_sleep: float
 
     def get_last_n(self, n: int):
-        return PlottingData(
+        return SleepEachDay(
             dates=self.dates[-n:],
-            segments=[
-                Segment(
+            sleep_stages=[
+                SleepStage(
                     name=segment.name,
                     color=segment.color,
                     values=segment.values[-n:],
                     values_ma=segment.values_ma[-n:],
                 )
-                for segment in self.segments
+                for segment in self.sleep_stages
             ],
+            daily_total_sleep=self.daily_total_sleep[-n:],
+            avg_total_sleep=sum(self.daily_total_sleep[-n:]) / n,
         )
 
 
@@ -72,25 +86,23 @@ def plot(
     sleep_score: SleepScoreMetrics,
     ma_window_size: int,  # Window size of moving average
 ):
-    fig = plt.figure(figsize=(12, 9))
+    fig = plt.figure(figsize=PLOT_SIZE)
     gs = GridSpec(2, 2, width_ratios=[1, 0.5], height_ratios=[3, 2])
     week_plot = plt.subplot(gs[0, :])  # merge columns in this row
     four_weeks_plot = plt.subplot(gs[1, 0])
     waffle_plot = plt.subplot(gs[1, 1])
 
-    sleep_plotting_data = _transform_durations(sleep, ma_window_size)
+    sleep_plotting_data = _transform_sleep_stages(sleep, ma_window_size)
 
-    # Chart 1
-    # Reduce to last 7 days
+    # Chart 1 - Sleep stages for the last 7 days
     week_data = sleep_plotting_data.get_last_n(DAYS_IN_WEEK)
-    plot_week_durations(week_plot, week_data)
+    plot_daily_stages(week_plot, week_data)
     score_plot: Axes = week_plot.twinx()  # type: ignore
     plot_scores_dot(score_plot, sleep_score, limit=DAYS_IN_WEEK)
 
-    # Chart 2
-    FOUR_WEEKS = 4 * DAYS_IN_WEEK
+    # Chart 2 - 7-day moving average stacked area chart for each sleep stage for the last 4 weeks
     four_weeks_data = sleep_plotting_data.get_last_n(FOUR_WEEKS)
-    plot_moving_avg_durations(four_weeks_plot, four_weeks_data)
+    plot_moving_avg_stages(four_weeks_plot, four_weeks_data)
     plot_scores_line(
         four_weeks_plot,
         sleep_score,
@@ -98,9 +110,9 @@ def plot(
         limit=FOUR_WEEKS,
     )
 
-    # Chart 3
-    # _plot_waffle_chart_sleep_duration(waffle_plot, dto_sleep_duration)
+    # Chart 3 - Sleep score waffle chart for the last 4 weeks
     _plot_waffle_chart_sleep_score(waffle_plot, sleep_score)
+    # _plot_waffle_chart_sleep_duration(waffle_plot, dto_sleep_duration)
 
     handles, labels = week_plot.get_legend_handles_labels()
     handles_score, labels_score = score_plot.get_legend_handles_labels()
@@ -145,7 +157,8 @@ def plot_scores_dot(score_plot: Axes, sleep_score: SleepScoreMetrics, limit: int
         color="black",
         label="Sleep Score",
         marker="o",
-        linestyle="None",
+        # linestyle="None",
+        alpha=0.3,
     )
     score_plot.set_ylabel("Sleep Score (0-100)")
     # score_plot.legend(fontsize="small", loc="upper left")
@@ -153,12 +166,12 @@ def plot_scores_dot(score_plot: Axes, sleep_score: SleepScoreMetrics, limit: int
     return line
 
 
-def plot_week_durations(week_plot: Axes, plotting_data: PlottingData):
+def plot_daily_stages(week_plot: Axes, plotting_data: SleepEachDay):
     # Keep track of current bottom of each bar
     bar_bottoms = [0] * len(plotting_data.dates)
 
-    # Iterate each stress segment and plot all bars for that segment
-    for segment in plotting_data.segments:
+    # Iterate each stage and plot all bars i.e. all days for that stage
+    for segment in plotting_data.sleep_stages:
         bar = week_plot.bar(
             x=plotting_data.dates,  # type: ignore
             height=segment.values,
@@ -173,6 +186,14 @@ def plot_week_durations(week_plot: Axes, plotting_data: PlottingData):
 
     # Add 8-hour target line
     week_plot.axhline(y=8, color="r", linestyle="--", label="8-hour Target")
+
+    # Add average line
+    week_plot.axhline(
+        y=plotting_data.avg_total_sleep,
+        color="gray",
+        linestyle="--",
+        label=f"Average: {plotting_data.avg_total_sleep:.1f}",
+    )
 
     # Add bar value to the top of each bar
     bars = week_plot.containers  # type: ignore
@@ -189,19 +210,17 @@ def plot_week_durations(week_plot: Axes, plotting_data: PlottingData):
     week_plot.grid(axis="y", alpha=0.5, linestyle="--")
 
 
-def plot_moving_avg_durations(plot: Axes, plotting_data: PlottingData):
-    logger.debug(f"Plotting days in moving avg. plot: {len(plotting_data.dates)}")
-
+def plot_moving_avg_stages(plot: Axes, plotting_data: SleepEachDay):
     plot.stackplot(
         # x axis is dates that where moving average is not None (i.e. not the first n days). We use the first segment, but should be the same for all
-        [date for date, ma in zip(plotting_data.dates, plotting_data.segments[0].values_ma) if ma],  # type: ignore
+        [date for date, ma in zip(plotting_data.dates, plotting_data.sleep_stages[0].values_ma) if ma],  # type: ignore
         # y axis is the list of not None moving averages for each segment
         [
             [val_ma for val_ma in segment.values_ma if val_ma]
-            for segment in plotting_data.segments
+            for segment in plotting_data.sleep_stages
         ],
-        colors=[segment.color for segment in plotting_data.segments],
-        labels=[segment.name for segment in plotting_data.segments],
+        colors=[segment.color for segment in plotting_data.sleep_stages],
+        labels=[segment.name for segment in plotting_data.sleep_stages],
     )
 
     plot.set_title(f"7-Day Moving Average (Last {len(plotting_data.dates)} Days)")
@@ -215,7 +234,7 @@ def plot_moving_avg_durations(plot: Axes, plotting_data: PlottingData):
 
 
 # Tranform into suitable plotting data
-def _transform_durations(sleep: SleepMetrics, window_size: int) -> PlottingData:
+def _transform_sleep_stages(sleep: SleepMetrics, window_size: int) -> SleepEachDay:
     # Calculation for normalizing sleep data (not used atm)
     # def sum_durations(entry: SleepEntry):
     #     valid_durations = [
@@ -230,50 +249,53 @@ def _transform_durations(sleep: SleepMetrics, window_size: int) -> PlottingData:
 
     dates = [entry.calendarDate for entry in sleep.entries]
 
-    values = [
-        entry.values.deepSleepSeconds / SECONDS_IN_HOUR for entry in sleep.entries
-    ]
-    deep_sleep = Segment(
-        name=SegmentNames.DEEP.value,
-        color=Colors.DEEP.value,
-        values=values,
-        values_ma=_get_moving_average(values, window_size),
+    def create_sleep_stage(
+        name: str, color: str, selector: Callable[[SleepEntry], float]
+    ) -> SleepStage:
+        values = [selector(entry) / SECONDS_IN_HOUR for entry in sleep.entries]
+
+        return SleepStage(
+            name=name,
+            color=color,
+            values=values,
+            values_ma=_get_moving_average(values, window_size),
+        )
+
+    # Create sleep stages
+    deep_sleep = create_sleep_stage(
+        name=StageNames.DEEP.value,
+        color=StageColors.DEEP.value,
+        selector=lambda entry: entry.values.deepSleepSeconds,
+    )
+    light_sleep = create_sleep_stage(
+        name=StageNames.LIGHT.value,
+        color=StageColors.LIGHT.value,
+        selector=lambda entry: entry.values.lightSleepSeconds,
+    )
+    rem_sleep = create_sleep_stage(
+        name=StageNames.REM.value,
+        color=StageColors.REM.value,
+        selector=lambda entry: entry.values.REMSleepSeconds,
+    )
+    awake_sleep = create_sleep_stage(
+        name=StageNames.AWAKE.value,
+        color=StageColors.AWAKE.value,
+        selector=lambda entry: entry.values.awakeSleepSeconds,
     )
 
-    values = [
-        entry.values.lightSleepSeconds / SECONDS_IN_HOUR for entry in sleep.entries
-    ]
-    light_sleep = Segment(
-        name=SegmentNames.LIGHT.value,
-        color=Colors.LIGHT.value,
-        values=values,
-        values_ma=_get_moving_average(values, window_size),
-    )
-
-    values = [entry.values.REMSleepSeconds / SECONDS_IN_HOUR for entry in sleep.entries]
-    rem_sleep = Segment(
-        name=SegmentNames.REM.value,
-        color=Colors.REM.value,
-        values=values,
-        values_ma=_get_moving_average(values, window_size),
-    )
-
-    values = [
-        entry.values.awakeSleepSeconds / SECONDS_IN_HOUR for entry in sleep.entries
-    ]
-    awake_sleep = Segment(
-        name=SegmentNames.AWAKE.value,
-        color=Colors.AWAKE.value,
-        values=values,
-        values_ma=_get_moving_average(values, window_size),
-    )
-    return PlottingData(
+    return SleepEachDay(
         dates=dates,
-        segments=[deep_sleep, light_sleep, rem_sleep, awake_sleep],
+        sleep_stages=[deep_sleep, light_sleep, rem_sleep, awake_sleep],
+        daily_total_sleep=[
+            entry.values.totalSleepSeconds / SECONDS_IN_HOUR for entry in sleep.entries
+        ],
+        avg_total_sleep=sleep.avg.total_seconds() / SECONDS_IN_HOUR,
     )
 
 
-def _get_moving_average(values: list[float], window_size: int) -> list[Optional[float]]:
+def _get_moving_average(
+    values: Sequence[float], window_size: int
+) -> list[Optional[float]]:
     moving_averages: list[Optional[float]] = []
 
     for i in range(1, len(values) + 1):
@@ -293,7 +315,7 @@ def _plot_waffle_chart_sleep_score(ax: Axes, model: SleepScoreMetrics):
     start_day = model.entries[0].calendarDate.weekday()
 
     # Number of complete weeks and remaining days
-    adjusted_weeks = adjust_weeks(sleep_data, start_day)
+    adjusted_weeks = _adjust_weeks(sleep_data, start_day)
 
     # XXX: RdYlBu produces very distinct colors, I think this is the best one
     colormap: LinearSegmentedColormap = plt.cm.RdYlBu  # type: ignore
@@ -390,7 +412,7 @@ def _plot_waffle_chart_sleep_score(ax: Axes, model: SleepScoreMetrics):
     ax.set_aspect("equal")
 
 
-def adjust_weeks(sleep_data: npt.NDArray[np.float64], start_day: int):
+def _adjust_weeks(sleep_data: npt.NDArray[np.float64], start_day: int):
     num_weeks = (len(sleep_data) + start_day) // DAYS_IN_WEEK
     adjusted_weeks = np.full((num_weeks + 1, DAYS_IN_WEEK), np.nan)
 
