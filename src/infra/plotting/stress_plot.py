@@ -12,8 +12,6 @@ from src.infra.garmin.dtos.garmin_stress_response import (
     StressEntry,
 )
 
-SECONDS_IN_MINUTE = 60
-
 # ALPHA = 0.7  # Transparency for stress bars
 
 

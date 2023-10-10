@@ -3,12 +3,12 @@ import logging
 from pathlib import Path
 from typing import Any, Protocol, Type, TypeVar
 
-import src.config as config
-import src.dependencies as dependency_resolver
-import src.logging_helper as logging_helper
+import src.setup.config as config
+import src.setup.dependencies as dependency_resolver
+import src.setup.logging_helper as logging_helper
 from src.domain.common import DatePeriod
 from src.infra.garmin.garmin_api_adapter import dto_to_endpoint
-from src.infra.garmin.garmin_endpoints import GarminEndpoint
+from src.setup.garmin_endpoints import GarminEndpoint
 from src.utils import to_YYYYMMDD
 
 logger = logging.getLogger(__name__)

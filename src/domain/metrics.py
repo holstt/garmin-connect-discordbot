@@ -8,6 +8,7 @@ from io import BytesIO
 # T = TypeVar("T")
 from typing import Any, Callable, Generic, Optional, TypeVar
 
+from src.consts import DAYS_IN_WEEK
 from src.infra.garmin.dtos.garmin_bb_response import BbEntry, GarminBbResponse
 from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse, HrvSummary
 from src.infra.garmin.dtos.garmin_response import GarminResponseEntryDto
@@ -29,9 +30,6 @@ R = TypeVar("R")  # Return type
 def average_by(items: list[L], prop_selector: Callable[[L], float]) -> float:
     total = sum(prop_selector(item) for item in items)
     return total / len(items) if items else 0.0
-
-
-DAYS_IN_WEEK = 7
 
 
 class BaseMetric(ABC, Generic[L, R]):

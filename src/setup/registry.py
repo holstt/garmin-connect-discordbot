@@ -13,17 +13,11 @@ from src.infra.garmin.garmin_api_client import (
     JsonResponseType,
 )
 from src.presentation.metric_msg_builder import MetricPlot, MetricViewModel
+from src.setup.garmin_metrid_ids import GarminMetricId
 
-
-# Unique identifier for each Garmin metric
-class GarminMetricId(Enum):
-    SLEEP = "sleep"
-    SLEEP_SCORE = "sleep_score"
-    RHR = "rhr"
-    BB = "bb"
-    HRV = "hrv"
-    STRESS = "stress"
-    # STEPS = "steps"
+# Unique identifier for each Garmin metric.
+# Order determines: the order in which metrics are fetched and the order which metrics are displayed
+# NB: Metrics obtained while sleeping most likely to be missing in today's data (e.g. if no sleep registered yet, or if not wearing device during sleep). Should be requested first to avoid unnecessary requests
 
 
 class ApiResponse(NamedTuple):

@@ -4,6 +4,7 @@ from typing import Protocol, Sequence, cast
 from typeguard import check_type
 
 import src.presentation.metric_msg_builder as builder
+from src.consts import DAYS_IN_WEEK
 from src.domain.common import DatePeriod
 from src.domain.metrics import (
     BodyBatteryMetrics,
@@ -29,7 +30,7 @@ from src.infra.plotting.plotting_service import (
     create_metrics_gridplot,
     create_sleep_analysis_plot,
 )
-from src.registry import *
+from src.setup.registry import *
 from src.utils import find_first_of_type, find_first_of_type_or_fail
 
 logger = logging.getLogger(__name__)
@@ -171,15 +172,6 @@ def build_to_dto_converter(
 # Build available plotting strategies.
 # Each strategy checks for presence of required metrics and returns a plot if required metrics for that strategy are present
 def build_plotting_strategies() -> list[PlottingStrategy]:
-    DAYS_IN_WEEK = 7  # XXX: Configurable?
-
-    def build_metrics_plot(
-        metrics: list[BaseMetric[GarminResponseEntryDto, Any]]
-    ) -> MetricPlot:
-        # No specific metrics required, it's just a generic plot of all metrics
-        metrics_plot = create_metrics_gridplot(metrics, n=DAYS_IN_WEEK)
-        return MetricPlot("metrics_plot", metrics_plot)
-
     def build_sleep_plot(
         metrics: Sequence[BaseMetric[GarminResponseEntryDto, Any]]
     ) -> MetricPlot | None:
@@ -187,14 +179,24 @@ def build_plotting_strategies() -> list[PlottingStrategy]:
         sleep = find_first_of_type(metrics, SleepMetrics)
         sleep_score = find_first_of_type(metrics, SleepScoreMetrics)
 
+        moving_avg_window_size = DAYS_IN_WEEK  # Configurable?
+
         # XXX: Just viz sleep metric without score if no score available? E.g. many watches support sleep tracking but not sleep score?
         if not sleep or not sleep_score:
             logger.debug("Unable to create sleep plot, missing required metrics")
             return None
 
         sleep_plot = create_sleep_analysis_plot(
-            sleep, sleep_score, ma_window_size=DAYS_IN_WEEK
+            sleep, sleep_score, ma_window_size=moving_avg_window_size
         )
         return MetricPlot("sleep_plot", sleep_plot)
 
-    return [build_metrics_plot, build_sleep_plot]
+    def build_metrics_plot(
+        metrics: list[BaseMetric[GarminResponseEntryDto, Any]]
+    ) -> MetricPlot:
+        days_to_plot = DAYS_IN_WEEK  # Configurable?
+        # No specific metrics required, it's just a generic plot of all metrics
+        metrics_plot = create_metrics_gridplot(metrics, n=days_to_plot)
+        return MetricPlot("metrics_plot", metrics_plot)
+
+    return [build_sleep_plot, build_metrics_plot]

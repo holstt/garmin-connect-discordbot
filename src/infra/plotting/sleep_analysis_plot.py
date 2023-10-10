@@ -14,15 +14,11 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.patches import FancyBboxPatch
 from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore
 
-from src.domain.metrics import SleepMetrics, SleepScoreMetrics  # type: ignore
-
-# from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
-# from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
+from src.consts import DAYS_IN_WEEK, SECONDS_IN_HOUR
+from src.domain.metrics import SleepMetrics, SleepScoreMetrics
 
 logger = logging.getLogger(__name__)
 
-SECONDS_IN_HOUR = 60 * 60
-DAYS_IN_WEEK = 7
 # ALPHA = 0.7
 
 

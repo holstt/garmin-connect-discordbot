@@ -14,7 +14,7 @@ from src.presentation.metric_msg_builder import (
     MetricPlot,
     MetricViewModel,
 )
-from src.registry import ModelToVmConverterRegistry, PlottingStrategy
+from src.setup.registry import ModelToVmConverterRegistry, PlottingStrategy
 
 
 # Adapts application requests to discord requests (DTOs)

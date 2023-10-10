@@ -8,8 +8,8 @@ from garminconnect import Garmin  # type: ignore
 from garth.exc import GarthHTTPError
 
 from src.domain.common import DatePeriod
-from src.infra.garmin.garmin_endpoints import GarminEndpoint
 from src.infra.time_provider import TimeProvider  # type: ignore
+from src.setup.garmin_endpoints import GarminEndpoint
 
 # XXX: Consider handling these errors from garminconnect lib: GarminConnectConnectionError,; GarminConnectTooManyRequestsError,
 

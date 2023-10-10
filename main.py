@@ -2,11 +2,11 @@ import logging
 import traceback
 from datetime import timedelta
 
-import src.config as config
-import src.dependencies as dependency_resolver
-import src.logging_helper as logging_helper
+import src.setup.config as config
+import src.setup.dependencies as dependency_resolver
+import src.setup.logging_helper as logging_helper
 from src import utils
-from src.config import Config
+from src.setup.config import Config
 
 logger = logging.getLogger(__name__)
 

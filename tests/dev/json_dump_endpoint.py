@@ -2,11 +2,11 @@ import logging
 
 from garminconnect import Garmin  # type: ignore
 
-from src import config, logging_helper
 from src.domain.common import DatePeriod
 from src.infra.garmin.garmin_api_client import GarminApiClient
-from src.infra.garmin.garmin_endpoints import GarminEndpoint
 from src.infra.time_provider import TimeProvider
+from src.setup import config, logging_helper
+from src.setup.garmin_endpoints import GarminEndpoint
 from tests.dev.test_utils import save_dto_to_file
 
 logger = logging.getLogger(__name__)
