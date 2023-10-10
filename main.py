@@ -31,9 +31,9 @@ def main(app_config: Config) -> None:
         scheduler.run()
     except Exception as e:
         # Notify discord on exception error if handler configured
-        if discord_error_handler := dependencies.error_handler:
+        if error_handler := dependencies.error_handler:
             stack_trace = traceback.format_exc()
-            discord_error_handler.handle(exception=e, stack_trace=stack_trace)
+            error_handler(exception=e, stack_trace=stack_trace)
         raise e  # Re-raise to exit program
 
 

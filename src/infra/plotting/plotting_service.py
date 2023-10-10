@@ -1,8 +1,11 @@
 from io import BytesIO
 from typing import Any
 
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+
+matplotlib.use("agg")
 
 import src.infra.plotting.metrics_gridplot as metrics_gridplot
 import src.infra.plotting.sleep_analysis_plot as sleep_analysis_plot

@@ -1,14 +1,12 @@
 import enum
 import logging
-import re
-from typing import Callable
+from datetime import date
 
-from attr import has
 from discord_webhook import DiscordEmbed
 from table2ascii import Alignment, PresetStyle, table2ascii
 
-import src.presentation.message_builder as builder
-from src.presentation.view_models import HealthSummaryViewModel
+import src.presentation.view_models as view_models
+from src.presentation.view_models import HealthSummaryViewModel, MetricViewModel
 
 logger = logging.getLogger(__name__)
 
@@ -33,39 +31,75 @@ class DiscordExceptionMessage(DiscordEmbed):
         )
 
 
-class MessageFormat(enum.Enum):
-    LINES = "lines"
-    TABLE = "table"
-
-
 # Health summary discord dto/message
-# TODO: A MessageStrategy creates a discord message given a HealthSummaryViewModel. Strategy is chosen based on the loaded user config and injected into relevant discord message service
-# i.e. --> MessageStrategy = Callable[[HealthSummaryViewModel], DiscordEmbed]
-class DiscordHealthSummaryMessage(DiscordEmbed):
-    def __init__(self, summary: HealthSummaryViewModel, format: MessageFormat):
-        title = f"Garmin Health Metrics, {summary.date.strftime('%d-%m-%Y')}"
-        msg = ""
-
-        match format:
-            case MessageFormat.LINES:
-                msg = _create_lines(msg, summary.metrics)
-            case MessageFormat.TABLE:
-                msg = _create_table(msg, summary.metrics)
-
+class DiscordMessageBase(DiscordEmbed):
+    def __init__(self, date: date, description: str):
+        title = f"Garmin Health Metrics, {date.strftime('%d-%m-%Y')}"
         super().__init__(
             title=title,
-            description=msg,
+            description=description,
             color=0x10A5E1,
         )
 
 
-# Greates a discord message with metrics in a list
-def _create_lines(msg: str, view_models: list[builder.MetricViewModel]):
-    for i, view_model in enumerate(view_models):
-        msg += view_model.to_line()
-        if i % 2 == 1:
-            msg += "\n"
-    return msg
+# Creates a discord message with metrics in a table
+class DiscordMessageTable(DiscordMessageBase):
+    def __init__(self, summary: HealthSummaryViewModel):
+        view_models = summary.metrics
+        style = PresetStyle.borderless
+
+        header = ["", "Value", "Δ Avg", "Week Avg", "Metric", "Δ Target"]
+        alignments = [
+            Alignment.RIGHT,
+            Alignment.RIGHT,
+            Alignment.RIGHT,
+            Alignment.RIGHT,
+            Alignment.LEFT,
+            Alignment.LEFT,
+        ]
+        body = []
+        for idx, view_model in enumerate(view_models):
+            body.append(self.to_table_row(view_model))
+            body.append([""] * len(header))
+        table = table2ascii(header, body, style=style, alignments=alignments)
+
+        table = f"```{table}```"
+        super().__init__(summary.date, table)
+
+    def to_table_row(self, view_model: MetricViewModel) -> list[str]:
+        return [
+            view_model.icon,
+            f"{view_model.latest}{view_model.out_of_max}",
+            f"{view_model.diff_to_avg} {view_model.diff_to_avg_emoji}",
+            f"{view_model.week_avg}{view_model.out_of_max}",
+            view_model.name,
+            # Avoid including target name. Will result in too long table row messing up the table
+            f"{view_model.diff_to_target.diff}"
+            # f"{view_model.diff_to_target.target_name}: {view_model.diff_to_target.diff}"
+            if view_model.diff_to_target else "",
+        ]
+
+
+# Creates a discord message with metrics in a list
+class DiscordMessageLines(DiscordMessageBase):
+    def __init__(self, summary: HealthSummaryViewModel):
+        view_models = summary.metrics
+        lines = ""
+        for i, view_model in enumerate(view_models):
+            lines += self.to_line(view_model)
+            # Add newline for every two metrics
+            if i % 2 == 1:
+                lines += "\n"
+        lines = f"```{lines}```"
+        super().__init__(summary.date, lines)
+
+    def to_line(self, view_model: MetricViewModel) -> str:
+        diff_to_target_str = (
+            f", Δ {view_model.diff_to_target.target_name}: {view_model.diff_to_target.diff}"
+            if view_model.diff_to_target
+            else ""
+        )
+        return f"```{view_model.icon} {view_model.name}: {view_model.latest}{view_model.out_of_max} - (weekly avg: {view_model.week_avg}{view_model.out_of_max}, Δ avg: {view_model.diff_to_avg}{diff_to_target_str})```"
 
 
 # XXX: Not used atm. Maybe relevant if we change the table style
@@ -79,27 +113,3 @@ def _create_lines(msg: str, view_models: list[builder.MetricViewModel]):
 # def remove_top_and_bottom_lines(table_str: str) -> str:
 #     lines = table_str.split("\n")
 #     return "\n".join(lines[1:-1])  # Skip the first and last lines
-
-
-# Creates a discord message with metrics in a table
-def _create_table(msg: str, view_models: list[builder.MetricViewModel]):
-    style = PresetStyle.borderless
-
-    header = ["", "Value", "Δ Avg", "Week Avg", "Metric", "Δ Target"]
-    alignments = [
-        Alignment.RIGHT,
-        Alignment.RIGHT,
-        Alignment.RIGHT,
-        Alignment.RIGHT,
-        Alignment.LEFT,
-        Alignment.RIGHT,
-    ]
-    body = []
-    for idx, view_model in enumerate(view_models):
-        body.append(view_model.to_table_row())
-        body.append([""] * len(header))
-    table = table2ascii(header, body, style=style, alignments=alignments)
-
-    msg += table
-
-    return f"```{msg}```"

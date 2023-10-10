@@ -1,13 +1,13 @@
 from io import BytesIO
 from typing import Callable
 
+from discord_webhook import DiscordEmbed
+
 from src.domain.metrics import HealthSummary
 from src.infra.discord.discord_api_client import DiscordApiClient
 from src.presentation.discord_messages import (
     DiscordErrorMessage,
     DiscordExceptionMessage,
-    DiscordHealthSummaryMessage,
-    MessageFormat,
 )
 from src.presentation.view_models import (
     HealthSummaryViewModel,
@@ -22,13 +22,14 @@ class DiscordApiAdapter:
     def __init__(
         self,
         discord_client: DiscordApiClient,
-        message_format: MessageFormat,
+        message_strategy: Callable[[HealthSummaryViewModel], DiscordEmbed],
         to_vm_registry: ModelToVmConverterRegistry,
         plotting_strategies: list[PlottingStrategy],
     ):
         super().__init__()
         self._client = discord_client
-        self._message_format = message_format
+        self.message_strategy = message_strategy
+
         self._to_vm_registry = to_vm_registry
         self._plotting_strategies = plotting_strategies
 
@@ -45,10 +46,11 @@ class DiscordApiAdapter:
             vms,
         )
 
-        discord_message = DiscordHealthSummaryMessage(summary_vm, self._message_format)
+        # Create discord message based on injected strategy
+        discord_message = self.message_strategy(summary_vm)
         self._client.send_message(discord_message)
 
-        # Create plots XXX: If config?
+        # Create plots for all strategies XXX: If config?
         plots: list[MetricPlot] = []
         for strategy in self._plotting_strategies:
             plot = strategy(summary.metrics)

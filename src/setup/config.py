@@ -13,8 +13,8 @@ from tzlocal import get_localzone
 
 import src.presentation.login_prompt as login
 from src import utils
-from src.presentation.discord_messages import MessageFormat
 from src.setup.garmin_metrid_ids import GarminMetricId
+from src.setup.message_formats import MessageFormat
 
 logger = logging.getLogger(__name__)
 
