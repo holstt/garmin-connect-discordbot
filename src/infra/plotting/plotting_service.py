@@ -1,8 +1,11 @@
 from io import BytesIO
-from typing import Any
+from typing import Any, Sequence
 
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
+
+matplotlib.use("agg")
 
 import src.infra.plotting.metrics_gridplot as metrics_gridplot
 import src.infra.plotting.sleep_analysis_plot as sleep_analysis_plot
@@ -11,20 +14,13 @@ from src.infra.garmin.dtos.garmin_response import (
     GarminResponseDto,
     GarminResponseEntryDto,
 )
-from src.presentation.metric_msg_builder import MetricPlot
-
-# def get_last_n(
-#     metric: BaseMetric[GarminResponseEntryDto, Any], n: int
-# ) -> BaseMetric[GarminResponseEntryDto, Any]:
-#     return type(metric)(metric.entries[-n:]) # XXX: Fix
 
 
 def create_metrics_gridplot(
-    metrics: list[BaseMetric[GarminResponseEntryDto, Any]],
+    metrics: Sequence[BaseMetric[GarminResponseEntryDto, Any]],
     n: int | None = None,
 ) -> BytesIO:
     # TODO: Return None if no data
-
     if n:
         metrics = [metric.with_last_n(n) for metric in metrics]
 

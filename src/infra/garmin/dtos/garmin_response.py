@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from datetime import date
-from typing import Generic, Protocol, TypeVar, cast
+from typing import Generic, Protocol, Sequence, TypeVar, cast
 
 from pydantic import TypeAdapter
 
@@ -20,7 +20,7 @@ T = TypeVar("T")
 
 @dataclass
 class GarminResponseDto(ABC, Generic[E]):
-    entries: list[E]
+    entries: Sequence[E]
 
     @staticmethod
     @abstractmethod
@@ -34,7 +34,7 @@ class GarminResponseDto(ABC, Generic[E]):
         return obj
 
     @staticmethod
-    def _from_json_list(json: JsonResponseType, dto_type: type[T]) -> list[T]:
-        adapter = TypeAdapter(list[dto_type])
+    def _from_json_list(json: JsonResponseType, dto_type: type[T]) -> Sequence[T]:
+        adapter = TypeAdapter(Sequence[dto_type])
         obj = adapter.validate_python(json)
         return obj

@@ -6,8 +6,9 @@ from datetime import timedelta
 from io import BytesIO
 
 # T = TypeVar("T")
-from typing import Any, Callable, Generic, Optional, TypeVar
+from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 
+from src.consts import DAYS_IN_WEEK
 from src.infra.garmin.dtos.garmin_bb_response import BbEntry, GarminBbResponse
 from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse, HrvSummary
 from src.infra.garmin.dtos.garmin_response import GarminResponseEntryDto
@@ -26,18 +27,15 @@ L = TypeVar("L", covariant=True)  # List type
 R = TypeVar("R")  # Return type
 
 
-def average_by(items: list[L], prop_selector: Callable[[L], float]) -> float:
+def average_by(items: Sequence[L], prop_selector: Callable[[L], float]) -> float:
     total = sum(prop_selector(item) for item in items)
     return total / len(items) if items else 0.0
-
-
-DAYS_IN_WEEK = 7
 
 
 class BaseMetric(ABC, Generic[L, R]):
     def __init__(
         self,
-        entries: list[L],
+        entries: Sequence[L],
         selector: Callable[[L], R],
         is_higher_better: bool = True,
     ):
@@ -56,16 +54,18 @@ class BaseMetric(ABC, Generic[L, R]):
     @property
     def entries(self):
         return self._entries
+        # return [self._selector(entry) for entry in self._entries]
 
     @property
-    def current(self) -> R:
+    def latest(self) -> R:
         return self._selector(self.entries[-1])
+        # return self.entries[-1]
 
 
 class SimpleMetric(BaseMetric[L, float], ABC):
     def __init__(
         self,
-        entries: list[L],
+        entries: Sequence[L],
         selector: Callable[[L], float],
         is_higher_better: bool = True,
     ):
@@ -82,14 +82,14 @@ class SimpleMetric(BaseMetric[L, float], ABC):
 
     @property
     def diff_to_avg(self) -> float:
-        return self.current - self.avg
+        return self.latest - self.avg
 
     @property
     def diff_to_weekly_avg(self) -> float:
-        return self.current - self.weekly_avg
+        return self.latest - self.weekly_avg
 
     def diff_to_target(self, target: float) -> float:
-        return self.current - target
+        return self.latest - target
 
 
 # NB! There may be gaps in data if metric not registered for some reason (e.g. if not always wearing device during sleep)
@@ -101,7 +101,7 @@ class RhrMetrics(SimpleMetric[RhrEntry]):
         super().__init__(entries, lambda x: x.values.restingHR, is_higher_better=False)
 
 
-class BodyBatteryMetrics(SimpleMetric[BbEntry]):
+class BbMetrics(SimpleMetric[BbEntry]):
     def __init__(self, bb_data: GarminBbResponse):
         entries = sorted(bb_data.entries, key=lambda x: x.calendarDate)
         super().__init__(
@@ -140,6 +140,12 @@ class SleepMetrics(BaseMetric[SleepEntry, timedelta]):  # XXX: // SleepSummary
         return timedelta(seconds=average_sleep_seconds)
 
     @property
+    def total(self) -> timedelta:
+        return timedelta(
+            seconds=(sum(entry.values.totalSleepSeconds for entry in self.entries))
+        )
+
+    @property
     def weekly_avg(self) -> timedelta:
         average_sleep_seconds = average_by(
             self._entries[-DAYS_IN_WEEK:], lambda x: x.values.totalSleepSeconds
@@ -148,14 +154,14 @@ class SleepMetrics(BaseMetric[SleepEntry, timedelta]):  # XXX: // SleepSummary
 
     @property
     def diff_to_weekly_avg(self) -> timedelta:
-        return self.current - self.weekly_avg
+        return self.latest - self.weekly_avg
 
     @property
     def diff_to_avg(self) -> timedelta:
-        return self.current - self.avg
+        return self.latest - self.avg
 
     def get_diff_to_hour(self, hour: int) -> timedelta:
-        return self.current - timedelta(hours=hour)
+        return self.latest - timedelta(hours=hour)
 
 
 class HrvMetrics(BaseMetric[HrvSummary, Optional[int]]):
@@ -180,7 +186,7 @@ class HrvMetrics(BaseMetric[HrvSummary, Optional[int]]):
     @property
     # Returns none if no hrv registered for the night
     def diff_to_weekly_avg(self) -> int | None:
-        return self.current - self.weekly_avg if self.current else None
+        return self.latest - self.weekly_avg if self.latest else None
 
     @property
     # Get wether hrv is balanced or not
@@ -192,5 +198,5 @@ class HrvMetrics(BaseMetric[HrvSummary, Optional[int]]):
 @dataclass(frozen=True)
 class HealthSummary:
     date: datetime.date
-    # plots: list[MetricPlot]
-    metrics: list[BaseMetric[GarminResponseEntryDto, Any]]
+    # plots: Sequence[MetricPlot]
+    metrics: Sequence[BaseMetric[GarminResponseEntryDto, Any]]

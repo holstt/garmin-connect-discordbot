@@ -1,20 +1,20 @@
 from io import BytesIO
-from typing import Callable
+from typing import Callable, Sequence
+
+from discord_webhook import DiscordEmbed
 
 from src.domain.metrics import HealthSummary
 from src.infra.discord.discord_api_client import DiscordApiClient
 from src.presentation.discord_messages import (
     DiscordErrorMessage,
     DiscordExceptionMessage,
-    DiscordHealthSummaryMessage,
-    MessageFormat,
 )
-from src.presentation.metric_msg_builder import (
+from src.presentation.view_models import (
     HealthSummaryViewModel,
     MetricPlot,
     MetricViewModel,
 )
-from src.registry import ModelToVmConverterRegistry, PlottingStrategy
+from src.setup.registry import ModelToVmConverterRegistry, PlottingStrategy
 
 
 # Adapts application requests to discord requests (DTOs)
@@ -22,20 +22,21 @@ class DiscordApiAdapter:
     def __init__(
         self,
         discord_client: DiscordApiClient,
-        message_format: MessageFormat,
+        message_strategy: Callable[[HealthSummaryViewModel], DiscordEmbed],
         to_vm_registry: ModelToVmConverterRegistry,
-        plotting_strategies: list[PlottingStrategy],
+        plotting_strategies: Sequence[PlottingStrategy],
     ):
         super().__init__()
         self._client = discord_client
-        self._message_format = message_format
+        self.message_strategy = message_strategy
+
         self._to_vm_registry = to_vm_registry
         self._plotting_strategies = plotting_strategies
 
     # Send health summary to discord webhook
     def send_health_summary(self, summary: HealthSummary) -> None:
         # Turn into view models
-        vms: list[MetricViewModel] = []
+        vms: Sequence[MetricViewModel] = []
         for metric in summary.metrics:
             vm = self._to_vm_registry.convert(metric)
             vms.append(vm)
@@ -45,11 +46,12 @@ class DiscordApiAdapter:
             vms,
         )
 
-        discord_message = DiscordHealthSummaryMessage(summary_vm, self._message_format)
+        # Create discord message based on injected strategy
+        discord_message = self.message_strategy(summary_vm)
         self._client.send_message(discord_message)
 
-        # Create plots XXX: If config?
-        plots: list[MetricPlot] = []
+        # Create plots for all strategies XXX: If config?
+        plots: Sequence[MetricPlot] = []
         for strategy in self._plotting_strategies:
             plot = strategy(summary.metrics)
             if plot:
@@ -60,7 +62,7 @@ class DiscordApiAdapter:
     def send_image(self, image: BytesIO, name: str) -> None:
         self._client.send_image(image, name)
 
-    def send_images(self, images: list[MetricPlot]) -> None:
+    def send_images(self, images: Sequence[MetricPlot]) -> None:
         self._client.send_images(
             [plot.data for plot in images], [f"{plot.id}.png" for plot in images]
         )

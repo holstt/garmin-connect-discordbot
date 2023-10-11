@@ -1,12 +1,13 @@
 import logging
 import traceback
 from datetime import timedelta
+from typing import Sequence
 
-import src.config as config
-import src.dependencies as dependency_resolver
-import src.logging_helper as logging_helper
+import src.setup.config as config
+import src.setup.dependencies as dependency_resolver
+import src.setup.logging_helper as logging_helper
 from src import utils
-from src.config import Config
+from src.setup.config import Config
 
 logger = logging.getLogger(__name__)
 
@@ -31,9 +32,9 @@ def main(app_config: Config) -> None:
         scheduler.run()
     except Exception as e:
         # Notify discord on exception error if handler configured
-        if discord_error_handler := dependencies.error_handler:
+        if error_handler := dependencies.error_handler:
             stack_trace = traceback.format_exc()
-            discord_error_handler.handle(exception=e, stack_trace=stack_trace)
+            error_handler(exception=e, stack_trace=stack_trace)  # type: ignore
         raise e  # Re-raise to exit program
 
 

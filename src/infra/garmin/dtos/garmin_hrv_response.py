@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Sequence
 
 from pydantic import BaseModel, Field
 
@@ -30,7 +30,7 @@ class HrvSummary(BaseModel, GarminResponseEntryDto):
 
 # Make both private and public class, such that public class has same structure as other dto responses
 class _GarminHrvResponseInternal(BaseModel):
-    hrvSummaries: list[HrvSummary]
+    hrvSummaries: Sequence[HrvSummary]
     userProfilePk: int
 
 

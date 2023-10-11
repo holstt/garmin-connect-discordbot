@@ -1,22 +1,22 @@
 import logging
 from datetime import date, timedelta
 from pathlib import Path
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Sequence, Union
 
 import requests  # type: ignore
 from garminconnect import Garmin  # type: ignore
 from garth.exc import GarthHTTPError
 
 from src.domain.common import DatePeriod
-from src.infra.garmin.garmin_endpoints import GarminEndpoint
 from src.infra.time_provider import TimeProvider  # type: ignore
+from src.setup.garmin_endpoints import GarminEndpoint
 
 # XXX: Consider handling these errors from garminconnect lib: GarminConnectConnectionError,; GarminConnectTooManyRequestsError,
 
 logger = logging.getLogger(__name__)
 
 # type alias for json
-JsonResponseType = Union[dict[Any, Any], list[Any]]
+JsonResponseType = Union[dict[Any, Any], Sequence[Any]]
 
 
 class GarminApiClientError(Exception):

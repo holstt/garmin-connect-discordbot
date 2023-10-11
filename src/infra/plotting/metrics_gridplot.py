@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Any, NamedTuple, Optional
+from typing import Any, NamedTuple, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -8,55 +8,51 @@ from matplotlib.axes import Axes
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib.figure import Figure
 
-import src.infra.garmin.dtos as dtos
+from src.consts import SECONDS_IN_HOUR
 from src.domain.metrics import (
     BaseMetric,
-    BodyBatteryMetrics,
+    BbMetrics,
     HrvMetrics,
     RhrMetrics,
     SleepMetrics,
     SleepScoreMetrics,
     StressMetrics,
 )
-from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
-from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
-from src.infra.garmin.dtos.garmin_response import (
-    GarminResponseDto,
-    GarminResponseEntryDto,
-)
-from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse
-from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
-from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
-from src.infra.garmin.dtos.garmin_steps_response import GarminStepsResponse
-from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
+from src.infra.garmin.dtos.garmin_response import GarminResponseEntryDto
+from src.utils import get_moving_average
 
-SECONDS_IN_HOUR = 3600
+PLOT_SIZE = (8, 9)
 
 
 class _GridPlotMetric(NamedTuple):
     name: str
     color: str
-    values: list[Optional[float]]
+    values: Sequence[float | None]
+
+    def get_avg(self) -> float:
+        return sum([val for val in self.values if val]) / len(self.values)
 
 
 # Creates subplot for each metric in a single figure
-def plot(metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]]) -> Figure:
+def plot(
+    metrics_data: Sequence[BaseMetric[GarminResponseEntryDto, Any]],
+) -> Figure:
     # Just get the dates from one of the metrics (they should all be the same)
     dates = [entry.calendarDate for entry in metrics_data[0].entries]
     weekdays = [date.strftime("%a") for date in dates]
 
-    plot_data = _transform(metrics_data)
+    plot_metrics = _transform(metrics_data)
 
-    fig = plt.figure(figsize=(11, 13))
+    fig = plt.figure(figsize=PLOT_SIZE)
 
     COLS = 2
     ROWS = (
-        len(plot_data) // COLS
-        if len(plot_data) % COLS == 0
-        else len(plot_data) // COLS + 1
+        len(plot_metrics) // COLS
+        if len(plot_metrics) % COLS == 0
+        else len(plot_metrics) // COLS + 1
     )
 
-    for idx, plot_metric in enumerate(plot_data, start=1):
+    for idx, plot_metric in enumerate(plot_metrics, start=1):
         ax = plt.subplot(ROWS, COLS, idx)
         _add_subplot(dates, weekdays, plot_metric, ax)
 
@@ -67,7 +63,10 @@ def plot(metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]]) -> Figure:
 
 
 def _add_subplot(
-    dates: list[date], weekdays: list[str], plot_metric: _GridPlotMetric, ax: Axes
+    dates: Sequence[date],
+    weekdays: Sequence[str],
+    plot_metric: _GridPlotMetric,
+    ax: Axes,
 ):
     # _plot_with_colormap(plot_metric, dates, ax)
 
@@ -81,12 +80,13 @@ def _add_subplot(
     ax.plot(latest_date, latest_val, color=plot_metric.color, marker="o", markeredgewidth=2, markeredgecolor="black", linestyle="", markersize=12)  # type: ignore
 
     # Add horizontal line with the metric average
-    avg_value = sum([val for val in plot_metric.values if val]) / len(
-        plot_metric.values
-    )
+    avg_value = plot_metric.get_avg()
     ax.axhline(
-        y=avg_value, color="gray", linestyle="--", label=f"Average: {avg_value:.0f}"
+        y=avg_value, color="gray", linestyle="--", label=f"Average: {avg_value:.1f}"
     )
+
+    # Add "background" line with full metric values #XXX: Not used atm - not sure if it's useful
+    # _add_background_plot(plot_metric, ax, plot_metric_full)
 
     # Remove top and right spines
     # ax.spines["top"].set_visible(False)
@@ -101,7 +101,41 @@ def _add_subplot(
     ax.grid(alpha=0.50)
 
 
-def _transform(metrics_data: list[BaseMetric[GarminResponseEntryDto, Any]]):
+def _add_background_plot(
+    plot_metric: _GridPlotMetric, ax: Axes, plot_metric_full: _GridPlotMetric
+):
+    ax_background: Axes = ax.twiny()  # type: ignore
+
+    # Keep existing axis limits
+    vals = [val for val in plot_metric.values if val]
+    min_val = min(vals)
+    max_val = max(vals)
+    val_range = max_val - min_val
+    padding = (
+        val_range * 0.2
+    )  # Adjust padding of foreground plot. Larger values will ensure more of the background plot is visible
+    plt.ylim(
+        min_val - padding,
+        max_val + padding,
+    )
+
+    # Now calculate the 7-day moving average for the full values
+    MA_SIZE = 7
+    # TODO: Use prev val if possible
+    plot_metric_full_no_none: Sequence[float] = [
+        val if val else 0 for val in plot_metric_full.values
+    ]
+    moving_avgs = get_moving_average(plot_metric_full_no_none, MA_SIZE)
+
+    ax_background.plot(
+        range(len(moving_avgs)),
+        moving_avgs,  # type: ignore
+        color=plot_metric.color,
+        alpha=0.25,
+    )
+
+
+def _transform(metrics_data: Sequence[BaseMetric[GarminResponseEntryDto, Any]]):
     return [get_plot_data(metric) for metric in metrics_data]
 
 
@@ -129,7 +163,7 @@ def get_plot_data(metric: BaseMetric[GarminResponseEntryDto, Any]) -> _GridPlotM
             color="#8c564b",
             values=[entry.values.overallStressLevel for entry in metric.entries],
         )
-    if isinstance(metric, BodyBatteryMetrics):
+    if isinstance(metric, BbMetrics):
         return _GridPlotMetric(
             name="Body Battery",
             color="#e377c2",
@@ -164,7 +198,7 @@ def get_plot_data(metric: BaseMetric[GarminResponseEntryDto, Any]) -> _GridPlotM
 
 
 # XXX: Not used. Solid colors seem to be better?
-def _plot_with_colormap(plot_metric: _GridPlotMetric, dates: list[date], ax: Axes):
+def _plot_with_colormap(plot_metric: _GridPlotMetric, dates: Sequence[date], ax: Axes):
     values: npt.NDArray[np.float64] = np.array(plot_metric.values, dtype=np.float64)
 
     # Create a linear segmented colormap from white to the input hex color

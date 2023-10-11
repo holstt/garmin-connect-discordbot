@@ -1,6 +1,6 @@
 import datetime
 from enum import Enum
-from typing import NamedTuple
+from typing import NamedTuple, Sequence
 
 import matplotlib.dates as mdates
 from matplotlib import pyplot as plt
@@ -11,8 +11,6 @@ from src.infra.garmin.dtos.garmin_stress_response import (
     GarminStressResponse,
     StressEntry,
 )
-
-SECONDS_IN_MINUTE = 60
 
 # ALPHA = 0.7  # Transparency for stress bars
 
@@ -34,12 +32,12 @@ class StressSegmentNames(Enum):
 class StressSegment(NamedTuple):
     name: str
     color: str
-    normalized_values: list[float]
+    normalized_values: Sequence[float]
 
 
 class StressPlottingData(NamedTuple):
-    dates: list[datetime.date]
-    stress_segments: list[StressSegment]
+    dates: Sequence[datetime.date]
+    stress_segments: Sequence[StressSegment]
 
 
 # Tranform into suitable plotting data
