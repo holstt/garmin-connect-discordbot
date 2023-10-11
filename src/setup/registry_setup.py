@@ -215,3 +215,25 @@ def build_message_strategy(message_format: MessageFormat) -> MessageStrategy:
             return lambda vm: DiscordMessageLines(vm)
         case MessageFormat.TABLE:
             return lambda vm: DiscordMessageTable(vm)
+
+
+# TODO: Add metrics using this centralized registry instead
+# registry_builder = CentralizedRegistryBuilder(api_client=GarminApiClient())
+
+
+# registry_builder.add_metric(
+#     metric_id=GarminMetricId.SLEEP,
+#     # Fetch
+#     fetcher=build_fetcher(endpoint=GarminEndpoint.DAILY_SLEEP),
+#     endpoint=GarminEndpoint.DAILY_SLEEP,
+#     # Dto
+#     response_to_dto_converter=build_to_dto_converter(dto_type=GarminSleepResponse),
+#     # Model
+#     dto_type=GarminSleepResponse,
+#     dto_to_model_converter=lambda dto: SleepMetrics(cast(GarminSleepResponse, dto)),
+#     # Vm
+#     model_type=SleepMetrics,
+#     model_to_vm_converter=lambda model: view_models.sleep_message(
+#         "Sleep Score", "😴", cast(SleepMetrics, model)
+#     ),
+# )
