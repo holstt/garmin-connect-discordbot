@@ -15,7 +15,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib.patches import FancyBboxPatch
 from mpl_toolkits.axes_grid1 import make_axes_locatable  # type: ignore
 
-from src.consts import DAYS_IN_WEEK, FOUR_WEEKS, SECONDS_IN_HOUR
+from src.consts import DAYS_IN_FOUR_WEEKS, DAYS_IN_WEEK, SECONDS_IN_HOUR
 from src.domain.metrics import SleepMetrics, SleepScoreMetrics
 from src.infra.garmin.dtos.garmin_sleep_response import SleepEntry
 from src.utils import get_moving_average
@@ -103,13 +103,13 @@ def plot(
     plot_scores_dot(score_plot, sleep_score, limit=DAYS_IN_WEEK)
 
     # Chart 2 - 7-day moving average stacked area chart for each sleep stage for the last 4 weeks
-    four_weeks_data = sleep_plotting_data.get_last_n(FOUR_WEEKS)
+    four_weeks_data = sleep_plotting_data.get_last_n(DAYS_IN_FOUR_WEEKS)
     plot_moving_avg_stages(four_weeks_plot, four_weeks_data)
     plot_scores_line(
         four_weeks_plot,
         sleep_score,
         ma_window_size,
-        limit=FOUR_WEEKS,
+        limit=DAYS_IN_FOUR_WEEKS,
     )
 
     # Chart 3 - Sleep score waffle chart for the last 4 weeks
