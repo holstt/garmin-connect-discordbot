@@ -1,8 +1,11 @@
 version: 2
 updates:
-  - package-ecosystem: "pip"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    allow:
-      - dependency-name: "garminconnect"
+    - package-ecosystem: "pip"
+      directory: "/"
+      schedule:
+          interval: "weekly"
+      # Only get updates for garminconnect
+      allow:
+          - dependency-name: "garminconnect"
+      # Should open PRs against the dev branch, not main
+      target-branch: "dev"
