@@ -1,7 +1,7 @@
 import datetime
 import logging
 from enum import Enum
-from typing import Callable, NamedTuple, Optional, Sequence
+from typing import Any, Callable, NamedTuple, Optional, Sequence
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -296,15 +296,28 @@ def _transform_sleep_stages(sleep: SleepMetrics, window_size: int) -> SleepEachD
 
 
 def _plot_waffle_chart_sleep_score(ax: Axes, model: SleepScoreMetrics):
-    sleep_data = np.array(
-        [entry.value for entry in model.entries],
+    # For any days missing in in the data, set sleep score to -1 (handled when creating the plot)
+    sleep_scores_lst: list[float] = []
+    for i, entry in enumerate(model.entries):
+        if i > 0:
+            # If there is a gap between two dates, fill it with -1
+            days_between = (entry.calendarDate - model.entries[i - 1].calendarDate).days
+            if days_between > 1:
+                sleep_scores_lst.extend([-1] * (days_between - 1))
+        sleep_scores_lst.append(entry.value)
+
+    # Create array of sleep scores
+    sleep_scores = np.array(
+        sleep_scores_lst,
         dtype=float,
     )
 
-    start_day = model.entries[0].calendarDate.weekday()
+    start_day_idx = model.entries[0].calendarDate.weekday()
 
-    # Number of complete weeks and remaining days
-    adjusted_weeks = _adjust_weeks(sleep_data, start_day)
+    # Each array in weekday_rows represents all values for a particular weekday in the waffle chart (a sleep score or nan)
+    weekday_rows: npt.NDArray[np.float64] = _create_weekday_rows(
+        sleep_scores, start_day_idx
+    )
 
     # XXX: RdYlBu produces very distinct colors, I think this is the best one
     colormap: LinearSegmentedColormap = plt.cm.RdYlBu  # type: ignore
@@ -323,34 +336,40 @@ def _plot_waffle_chart_sleep_score(ax: Axes, model: SleepScoreMetrics):
     edgecolor = color_background  # Color of line
 
     # Create a custom normalization with the range of sleep scores (0 to 100)
-    score_norm = Normalize(vmin=0, vmax=100, clip=True)
-    for week_num in range(adjusted_weeks.shape[1]):
-        for day_num in range(adjusted_weeks.shape[0]):
-            sleep_score = adjusted_weeks[day_num, week_num]
+    score_norm = Normalize(vmin=0, vmax=100, clip=True)  # Norm between 0 and 1
+    for week_num in range(weekday_rows.shape[1]):
+        for day_num in range(weekday_rows.shape[0]):
+            sleep_score: float = weekday_rows[day_num, week_num]
             # Check if the value is not nan before drawing rectangle
             if not np.isnan(sleep_score):
-                # Get color of rectangle from colormap
-                color = colormap(score_norm(sleep_score))  # type: ignore
+                # Get color from colormap
+                square_color = colormap(score_norm(sleep_score))  # type: ignore
+
+                # White if sleep score is -1 (missing data)
+                if sleep_score == -1:
+                    square_color = "white"
+
                 rect = FancyBboxPatch(
+                    # Calc xy coordinates of square
                     (week_num + padding / 2, DAYS_IN_WEEK - 1 - day_num + padding / 2),
                     1 - padding,
                     1 - padding,
                     boxstyle="round,pad=" + str(padding / 2),
-                    facecolor=color,
+                    facecolor=square_color,
                     edgecolor=edgecolor,
                     linewidth=linewidth,
                 )
                 ax.add_patch(rect)
 
     # Set axis limits and labels
-    ax.set_xlim(0, adjusted_weeks.shape[1])
-    ax.set_ylim(0, adjusted_weeks.shape[0])
+    ax.set_xlim(0, weekday_rows.shape[1])
+    ax.set_ylim(0, weekday_rows.shape[0])
     ax.set_xlabel("Weeks")
-    ax.set_title(f"Sleep Scores (Last {len(sleep_data)} Days)")
+    ax.set_title(f"Sleep Scores (Last {len(sleep_scores)} Days)")
 
     # set x ticks such that they are in the middle of the week
-    ax.set_xticks(np.arange(0.5, adjusted_weeks.shape[1] + 0.5, 1))
-    ax.set_xticklabels(np.arange(1, adjusted_weeks.shape[1] + 1, 1))
+    ax.set_xticks(np.arange(0.5, weekday_rows.shape[1] + 0.5, 1))
+    ax.set_xticklabels(np.arange(1, weekday_rows.shape[1] + 1, 1))
 
     # Remove border
     ax.spines["top"].set_visible(False)
@@ -391,11 +410,12 @@ def _plot_waffle_chart_sleep_score(ax: Axes, model: SleepScoreMetrics):
     ax.set_aspect("equal")
 
 
-def _adjust_weeks(sleep_data: npt.NDArray[np.float64], start_day: int):
-    num_weeks = (len(sleep_data) + start_day) // DAYS_IN_WEEK
+#
+def _create_weekday_rows(sleep_data: npt.NDArray[np.float64], start_day_idx: int):
+    num_weeks = (len(sleep_data) + start_day_idx) // DAYS_IN_WEEK
     adjusted_weeks = np.full((num_weeks + 1, DAYS_IN_WEEK), np.nan)
 
-    day_indices = np.arange(len(sleep_data)) + start_day
+    day_indices = np.arange(len(sleep_data)) + start_day_idx
     week_indices = day_indices // DAYS_IN_WEEK
     day_positions = day_indices % DAYS_IN_WEEK
 
