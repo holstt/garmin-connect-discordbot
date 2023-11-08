@@ -20,6 +20,7 @@ RUN poetry install --no-dev
 COPY ./main.py .
 COPY ./src ./src
 
+# Ensure non-root user, then run the app.
 ENTRYPOINT \
   echo "Running as user: $(whoami) $(id -u):$(id -g)" && \
   if [ $(id -u) -eq 0 ] || [ $(id -G | grep -w 0) ]; then \

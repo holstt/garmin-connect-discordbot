@@ -21,7 +21,7 @@ export DOCKER_USER_ID DOCKER_GROUP_ID ENV_PATH CONTAINER_DATA_DIR
 # -d: detached mode
 # --build: rebuild image if changes to source code
 # --force-recreate: ensures the container is restarted (even if no changes to source/config) instead of just attaching to the existing container
-docker-compose up -d --build --force-recreate && docker-compose logs -f
+docker compose up -d --build --force-recreate && docker compose logs -f
 
 # For running as interactive shell if you want to enter credentials manually (i.e. if not provided in .env file)
-# docker-compose run app
+# docker compose run app

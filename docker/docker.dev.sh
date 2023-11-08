@@ -11,7 +11,7 @@ CONTAINER_DATA_DIR="../../data"
 ENV_PATH="../../.env"
 
 # Local user to run the container as
-USERNAME="garmin-health-bot"
+USERNAME="garmin-connect-bot"
 GROUPNAME=$USERNAME
 
 # Uncomment to use setup script used in prod (set up user, dir, permissions). May not be relevant/necessary in dev
