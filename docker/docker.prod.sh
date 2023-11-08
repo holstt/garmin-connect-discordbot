@@ -9,7 +9,7 @@ echo "Running script: $0"
 # Set paths with above assumptions
 CONTAINER_DATA_DIR="../data"
 ENV_PATH="../.env.prod"
-USERNAME="garmin-health-bot"
+USERNAME="garmin-connect-bot"
 GROUPNAME=$USERNAME
 
 ./docker_setup.sh $CONTAINER_DATA_DIR $ENV_PATH $USERNAME $GROUPNAME

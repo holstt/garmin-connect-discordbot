@@ -103,6 +103,12 @@ cd docker
 
 `./docker` includes convenient scripts to simplify setting up and running the Docker container with `docker.dev.sh` and `docker.prod.sh` being the entrypoints. These scripts handle the creation of a dedicated Docker user, a container data directory on the host, and apply restrictive permissions on the data directory and environment file before running the container. Inspect the configuration in the scripts, and verify that the assumed host paths match your file structure.
 
+Ensure scripts are executable:
+
+```bash
+chmod +x docker_run.sh docker.dev.sh docker.prod.sh
+```
+
 Then run the script for your environment, e.g.:
 
 ```bash
@@ -115,11 +121,11 @@ For a less restrictive/simpler setup, you can edit and use the `docker-compose.y
 Then run:
 
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 or to keep it running in the background:
 
 ```bash
-docker-compose up -d --build && docker-compose logs -f
+docker compose up -d --build && docker compose logs -f
 ```
