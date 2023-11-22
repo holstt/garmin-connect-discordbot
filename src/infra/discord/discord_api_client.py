@@ -37,7 +37,7 @@ class DiscordApiClient:
         self._base_client.set_content(message)
         self._base_client.execute()
 
-    def send_message(self, embed: DiscordEmbed) -> None:
+    def send_message_embed(self, embed: DiscordEmbed) -> None:
         self._base_client.add_embed(embed)
         self._execute()
 
