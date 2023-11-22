@@ -32,45 +32,53 @@ class GarminService:
         self._dto_to_model_converter_registry = dto_to_model_converter_registry
         self._metrics_to_include = metrics_to_include
 
-    # Returns health stats for the past 7 days (including end date)
+    # Returns health summary
     # or None if today has not been registered yet for one of the metrics
-    def try_get_weekly_health_summary(
-        self, week_end: date
-    ) -> Optional[metrics.HealthSummary]:
-        # 4 weeks of data needed for the summary if includes plots
-        period = DatePeriod.from_last_4_weeks(week_end)
+    def try_get_health_summary(self, end_date: date) -> Optional[metrics.HealthSummary]:
+        # Request 4 weeks of data -> needed for the summary (if includes plots)
+        period = DatePeriod.from_last_4_weeks(end_date)
         # period = DatePeriod.from_last_7_days(week_end)
 
-        # Try to get weekly metrics
-        return self._try_get_summary(period)
+        # Try to get summary for this period
+        return self._try_get_health_summary(period)
 
-    def _try_get_summary(self, period: DatePeriod) -> Optional[metrics.HealthSummary]:
+    def _try_get_health_summary(
+        self, period: DatePeriod
+    ) -> Optional[metrics.HealthSummary]:
+        logger.info(f"Trying to create health summary for period: {period}")
+
         dtos: Sequence[GarminResponseDto[GarminResponseEntryDto]] = []
+
+        # TODO: Move to separate method, fetch_metrics(), fetch_metric()
         for metric in self._metrics_to_include:
             # Fetch this metric data
             response = self._fetcher_registry.fetch(metric, period)
 
             # Early return in case of missing data to avoid additional requests
             if not response.data:
-                logger.info(f"Empty data for {metric}. Summary will not be generated.")
+                # XXX: Is this unexpected? Throw exception?
+                logger.info(
+                    f"Empty response for {metric}. Summary will not be generated."
+                )
                 return None
 
             dto = self._response_to_dto_converter_registry.convert(
                 response.endpoint, response.data
             )
 
-            logger.info(f"Got {metric} data with num entries: {len(dto.entries)}")
+            logger.debug(f"Got {metric} data with num entries: {len(dto.entries)}")
 
             # Ensure that the data includes the end date
             if period.end not in [x.calendarDate for x in dto.entries]:
                 logger.info(
-                    f"Did not find {metric} data for specified end date: {period.end.isoformat()}. Summary will not be generated."
+                    f"{metric} data did contain entry for the target end date: {period.end.isoformat()}. Summary will not be generated."
                 )
                 return None
 
             dtos.append(dto)
 
         # Iterate dtos and convert to models
+        # TODO: Move to separate method, convert_to_models()
         models: Sequence[BaseMetric[GarminResponseEntryDto, Any]] = []
         for dto in dtos:
             model = self._dto_to_model_converter_registry.convert(dto)
@@ -82,4 +90,5 @@ class GarminService:
             metrics=models,
         )
 
+        logger.info(f"Health summary for period created.")
         return health_summary

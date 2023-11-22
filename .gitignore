@@ -3,7 +3,7 @@
 session*
 **.json
 manual*
-
+data
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -109,8 +109,8 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-*.env
-!example.env
+*.env*
+!*.env.example
 .venv
 env/
 venv/

@@ -55,7 +55,7 @@ class GarminFetchDataScheduler:
 
         if fetch_start_time <= current_time.time():
             logger.info(
-                f"Current time '{current_time.time()}' has passed notify time {fetch_start_time}, running job immediately"
+                f"Current time {current_time.time()} has passed notify time {fetch_start_time}, running job immediately"
             )
             # Run immediately if we have passed the start time
             next_run_time = current_time + timedelta(
@@ -63,7 +63,7 @@ class GarminFetchDataScheduler:
             )  # Small delay to allow scheduler to start
         else:
             logger.info(
-                f"Current time '{current_time.time()}' has not passed notify time {fetch_start_time} yet, scheduling job as normal"
+                f"Current time {current_time.time()} has not passed notify time {fetch_start_time} yet, scheduling job as normal"
             )
             next_run_time = None
 
@@ -108,9 +108,7 @@ class GarminFetchDataScheduler:
     def _execute_garmin_fetch_task(self, week_end: date) -> bool:
         logger.info("Started daily garmin fetch job")
 
-        health_summary = self._garmin_service.try_get_weekly_health_summary(
-            week_end=week_end
-        )
+        health_summary = self._garmin_service.try_get_health_summary(end_date=week_end)
 
         # Handle summary not yet available
         if not health_summary:

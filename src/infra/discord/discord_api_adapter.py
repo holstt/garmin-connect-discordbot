@@ -1,3 +1,4 @@
+import logging
 from io import BytesIO
 from typing import Callable, Sequence
 
@@ -16,6 +17,8 @@ from src.presentation.view_models import (
 )
 from src.setup.registry import ModelToVmConverterRegistry, PlottingStrategy
 
+logger = logging.getLogger(__name__)
+
 
 # Adapts application requests to discord requests (DTOs)
 class DiscordApiAdapter:
@@ -23,14 +26,14 @@ class DiscordApiAdapter:
         self,
         discord_client: DiscordApiClient,
         message_strategy: Callable[[HealthSummaryViewModel], DiscordEmbed],
-        to_vm_registry: ModelToVmConverterRegistry,
+        model_to_vm_converter: ModelToVmConverterRegistry,
         plotting_strategies: Sequence[PlottingStrategy],
     ):
         super().__init__()
         self._client = discord_client
         self.message_strategy = message_strategy
 
-        self._to_vm_registry = to_vm_registry
+        self._model_to_vm_converter = model_to_vm_converter
         self._plotting_strategies = plotting_strategies
 
     # Send health summary to discord webhook
@@ -38,7 +41,7 @@ class DiscordApiAdapter:
         # Turn into view models
         vms: Sequence[MetricViewModel] = []
         for metric in summary.metrics:
-            vm = self._to_vm_registry.convert(metric)
+            vm = self._model_to_vm_converter.convert(metric)
             vms.append(vm)
 
         summary_vm = HealthSummaryViewModel(
@@ -48,7 +51,8 @@ class DiscordApiAdapter:
 
         # Create discord message based on injected strategy
         discord_message = self.message_strategy(summary_vm)
-        self._client.send_message(discord_message)
+        logger.info(f"Sending health summary embed to discord")
+        self._client.send_message_embed(discord_message)
 
         # Create plots for all strategies XXX: If config?
         plots: Sequence[MetricPlot] = []
@@ -57,14 +61,15 @@ class DiscordApiAdapter:
             if plot:
                 plots.append(plot)
 
-        self.send_images(plots)
+        logger.info(f"Sending plots to discord")
+        self.send_plots(plots)
 
-    def send_image(self, image: BytesIO, name: str) -> None:
-        self._client.send_image(image, name)
+    # def send_image(self, image: BytesIO, name: str) -> None:
+    #     self._client.send_image(image, name)
 
-    def send_images(self, images: Sequence[MetricPlot]) -> None:
+    def send_plots(self, plots: Sequence[MetricPlot]) -> None:
         self._client.send_images(
-            [plot.data for plot in images], [f"{plot.id}.png" for plot in images]
+            [plot.data for plot in plots], [f"{plot.id}.png" for plot in plots]
         )
 
     # Send error message to discord webhook
@@ -74,7 +79,7 @@ class DiscordApiAdapter:
         error_message: str,
     ) -> None:
         discord_message = DiscordErrorMessage(error_name, error_message)
-        self._client.send_message(discord_message)
+        self._client.send_message_embed(discord_message)
 
     def send_exception(
         self,
@@ -82,4 +87,4 @@ class DiscordApiAdapter:
         stack_trace: str,
     ) -> None:
         discord_message = DiscordExceptionMessage(exception, stack_trace)
-        self._client.send_message(discord_message)
+        self._client.send_message_embed(discord_message)

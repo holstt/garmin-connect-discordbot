@@ -200,7 +200,7 @@ def build_plotting_strategies() -> Sequence[PlottingStrategy]:
     ) -> MetricPlot:
         days_to_plot = DAYS_IN_WEEK  # Configurable?
         # No specific metrics required, it's just a generic plot of all metrics
-        metrics_plot = create_metrics_gridplot(metrics, n=days_to_plot)
+        metrics_plot = create_metrics_gridplot(metrics, period_len=days_to_plot)
         return MetricPlot("metrics_plot", metrics_plot)
 
     return [build_sleep_plot, build_metrics_plot]

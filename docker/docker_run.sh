@@ -1,9 +1,12 @@
 #!/bin/bash
+# This scripts starts the docker project with the correct environment variables
+# Will rebuild and start the project in detached mode, then follow the log output
+# Use docker.<env>.sh scripts to set environment variables and call this script
+
 set -e
 echo "Running script: $0"
 
-# This scripts starts the docker project with the correct environment variables
-# Will rebuild and start the project in detached mode, then follow the log output
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 
 # Get args
 CONTAINER_DATA_DIR=$1
@@ -21,7 +24,7 @@ export DOCKER_USER_ID DOCKER_GROUP_ID ENV_PATH CONTAINER_DATA_DIR
 # -d: detached mode
 # --build: rebuild image if changes to source code
 # --force-recreate: ensures the container is restarted (even if no changes to source/config) instead of just attaching to the existing container
-docker compose up -d --build --force-recreate && docker compose logs -f
+(cd "$SCRIPT_DIR" && docker compose up -d --build --force-recreate && docker compose logs -f)
 
 # For running as interactive shell if you want to enter credentials manually (i.e. if not provided in .env file)
-# docker compose run app
+# (cd "$SCRIPT_DIR" && docker compose run app)
