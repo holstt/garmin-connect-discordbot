@@ -58,7 +58,9 @@ class DiscordApiClient:
     # Executes current state of the client and resets it
     def _execute(self) -> None:
         try:
+            # base client keeps state -> remove embeds and attachments after sending
             response = self._base_client.execute(remove_embeds=True)
+            self._base_client.clear_attachments()
             response.raise_for_status()
         except Exception as e:
             raise DiscordException(f"Error sending message to Discord: {e}") from e
