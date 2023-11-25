@@ -88,7 +88,7 @@ def resolve(app_config: Config) -> Dependencies:
         garmin_service,
         time_provider,
         summary_ready_event=discord_service.on_summary_ready,
-        exception_event=error_handler if error_handler else None,
+        on_scheduler_exception=error_handler if error_handler else None,
     )
     return Dependencies(
         time_provider,

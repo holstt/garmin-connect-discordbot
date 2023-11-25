@@ -3,7 +3,8 @@ import random
 from datetime import date, datetime, time, timedelta
 from typing import Callable, Optional
 
-from apscheduler.events import EVENT_JOB_ERROR, JobExecutionEvent  # type: ignore
+from apscheduler.events import EVENT_JOB_ERROR  # type: ignore
+from apscheduler.events import JobExecutionEvent  # type: ignore
 from apscheduler.job import Job  # type: ignore
 from apscheduler.schedulers.background import BlockingScheduler  # type: ignore
 from apscheduler.triggers.cron import CronTrigger  # type: ignore
@@ -30,14 +31,16 @@ class GarminFetchDataScheduler:
         garmin_service: GarminService,
         time_provider: TimeProvider,
         summary_ready_event: Callable[[HealthSummary], None],
-        exception_event: Optional[Callable[[Exception, str], None]],
+        # NB: Exceptions in jobs are caught and logged by the scheduler
+        # This callback is only used to notify the application of the exception if needed
+        on_scheduler_exception: Optional[Callable[[Exception, str], None]],
     ):
         super().__init__()
         self._garmin_service = garmin_service
         self._time_provider = time_provider
         self._summary_ready_event = summary_ready_event
         self._scheduler = BlockingScheduler(timezone="UTC")
-        self.exception_event = exception_event
+        self.on_scheduler_exception = on_scheduler_exception
 
         # Add error listener
         self._scheduler.add_listener(self._on_exception, EVENT_JOB_ERROR)
@@ -136,9 +139,11 @@ class GarminFetchDataScheduler:
         self._summary_ready_event(healthSummary)
 
     def _on_exception(self, event: JobExecutionEvent) -> None:
-        if event.exception and self.exception_event:
+        logger.exception("An exception occured while executing job in scheduler")
+
+        if event.exception and self.on_scheduler_exception:
             # Raise exception event
-            self.exception_event(event.exception, event.traceback)  # type: ignore
+            self.on_scheduler_exception(event.exception, event.traceback)  # type: ignore
 
     def run(self):
         logger.info("Starting scheduler with jobs:")
