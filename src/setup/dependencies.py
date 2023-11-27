@@ -4,12 +4,15 @@ from garminconnect import Garmin  # type: ignore
 
 from src.application.garmin_service import GarminService
 from src.application.scheduler_service import GarminFetchDataScheduler
-from src.infra.discord.discord_api_adapter import ErrorAdapter, HealthSummaryAdapter
+from src.infra.discord.discord_api_adapter import (
+    DiscordErrorAdapter,
+    DiscordHealthSummaryAdapter,
+)
 from src.infra.discord.discord_api_client import DiscordApiClient
 from src.infra.garmin.garmin_api_adapter import GarminApiAdapter
 from src.infra.garmin.garmin_api_client import GarminApiClient
 from src.infra.time_provider import TimeProvider
-from src.presentation.discord_service import (
+from src.presentation.notification_service import (
     ErrorNotificationService,
     HealthSummaryNotificationService,
 )
@@ -32,7 +35,7 @@ class Dependencies(NamedTuple):
     garmin_adapter: GarminApiAdapter
     garmin_service: GarminService
     discord_client: DiscordApiClient
-    summary_adapter: HealthSummaryAdapter
+    summary_adapter: DiscordHealthSummaryAdapter
     summary_notifier: HealthSummaryNotificationService
     scheduler: GarminFetchDataScheduler
     error_handler: Optional[Callable[[Exception, str], None]]
@@ -69,7 +72,7 @@ def resolve(app_config: Config) -> Dependencies:
         app_config.webhook_url, time_provider, service_name="garmin-connect-bot"
     )
 
-    health_summary_adapter = HealthSummaryAdapter(
+    health_summary_adapter = DiscordHealthSummaryAdapter(
         discord_client,
         message_strategy,
         to_vm_converter_registry,
@@ -87,7 +90,7 @@ def resolve(app_config: Config) -> Dependencies:
             webhook_error_url, time_provider, service_name="garmin-connect-bot"
         )
 
-        error_adapter = ErrorAdapter(
+        error_adapter = DiscordErrorAdapter(
             error_client,
         )
 

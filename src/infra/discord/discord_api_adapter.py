@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 # Adapter for sending health summaries
-class HealthSummaryAdapter:
+class DiscordHealthSummaryAdapter:
     def __init__(
         self,
         discord_client: DiscordApiClient,
@@ -75,7 +75,7 @@ class HealthSummaryAdapter:
 
 
 # Adapter for sending error messages to discord
-class ErrorAdapter:
+class DiscordErrorAdapter:
     def __init__(
         self,
         discord_client: DiscordApiClient,
