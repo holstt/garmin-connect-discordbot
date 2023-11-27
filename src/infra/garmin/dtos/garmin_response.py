@@ -56,7 +56,7 @@ class GarminResponseDto(ABC, Generic[E]):
                 type = error["type"]
                 input = error["input"]
                 custom_errors.append(
-                    f"Error in field '{field}' of type '{type}'. Invalid value: {input}. Message: {msg}."
+                    f"Error for field '{field}' of type '{type}'. Invalid value: {input}. Error message: {msg}."
                 )
 
             error_msg = (
