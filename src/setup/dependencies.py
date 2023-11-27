@@ -33,9 +33,6 @@ class Dependencies(NamedTuple):
     discord_service: DiscordNotificationService
     scheduler: GarminFetchDataScheduler
     error_handler: Optional[Callable[[Exception, str], None]]
-    # fetcher_registry: FetcherRegistry
-    # to_dto_converter_registry: ResponseToDtoConverterRegistry
-    # to_model_converter_registry: DtoToModelConverterRegistry
 
 
 def resolve(app_config: Config) -> Dependencies:
@@ -71,7 +68,6 @@ def resolve(app_config: Config) -> Dependencies:
 
     discord_api_adapter = DiscordApiAdapter(
         discord_client,
-        # app_config.message_format,
         message_strategy,
         to_vm_converter_registry,
         plotting_strategies,
@@ -79,10 +75,24 @@ def resolve(app_config: Config) -> Dependencies:
 
     discord_service = DiscordNotificationService(discord_api_adapter)
 
-    error_handler = None
     # Create error handler if needed
-    if app_config.webhook_error_url:
-        error_handler = discord_service.on_exception
+    error_handler = None
+    if webhook_error_url := app_config.webhook_error_url:
+        # TODO: Create simple error notifier
+
+        error_client = DiscordApiClient(
+            webhook_error_url, time_provider, service_name="garmin-connect-bot"
+        )
+
+        error_adapter = DiscordApiAdapter(
+            error_client,
+            message_strategy,
+            to_vm_converter_registry,
+            plotting_strategies,
+        )
+
+        error_service = DiscordNotificationService(error_adapter)
+        error_handler = error_service.on_exception
 
     scheduler = GarminFetchDataScheduler(
         garmin_service,
