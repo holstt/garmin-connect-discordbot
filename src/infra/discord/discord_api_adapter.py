@@ -19,9 +19,11 @@ from src.setup.registry import ModelToVmConverterRegistry, PlottingStrategy
 
 logger = logging.getLogger(__name__)
 
-
 # Adapts application requests to discord requests (DTOs)
-class DiscordApiAdapter:
+
+
+# Adapter for sending health summaries
+class HealthSummaryAdapter:
     def __init__(
         self,
         discord_client: DiscordApiClient,
@@ -32,7 +34,6 @@ class DiscordApiAdapter:
         super().__init__()
         self._client = discord_client
         self.message_strategy = message_strategy
-
         self._model_to_vm_converter = model_to_vm_converter
         self._plotting_strategies = plotting_strategies
 
@@ -72,19 +73,20 @@ class DiscordApiAdapter:
             [plot.data for plot in plots], [f"{plot.id}.png" for plot in plots]
         )
 
-    # Send error message to discord webhook
-    def send_error(
+
+# Adapter for sending error messages to discord
+class ErrorAdapter:
+    def __init__(
         self,
-        error_name: str,
-        error_message: str,
-    ) -> None:
+        discord_client: DiscordApiClient,
+    ):
+        super().__init__()
+        self._client = discord_client
+
+    def send_error(self, error_name: str, error_message: str) -> None:
         discord_message = DiscordErrorMessage(error_name, error_message)
         self._client.send_message_embed(discord_message)
 
-    def send_exception(
-        self,
-        exception: Exception,
-        stack_trace: str,
-    ) -> None:
+    def send_exception(self, exception: Exception, stack_trace: str) -> None:
         discord_message = DiscordExceptionMessage(exception, stack_trace)
         self._client.send_message_embed(discord_message)

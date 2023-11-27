@@ -1,23 +1,28 @@
 import logging
 
 from src.domain.metrics import HealthSummary
-from src.infra.discord.discord_api_adapter import DiscordApiAdapter
+from src.infra.discord.discord_api_adapter import ErrorAdapter, HealthSummaryAdapter
 
 logger = logging.getLogger(__name__)
 
+# Notifies discord on events from the application
 
-# Gets notified by infra layer when a new health summary is ready
-class DiscordNotificationService:
-    def __init__(self, adapter: DiscordApiAdapter):
+
+class HealthSummaryNotificationService:
+    def __init__(self, health_summary_adapter: HealthSummaryAdapter):
         super().__init__()
-        self._adapter = adapter
+        self._health_summary_adapter = health_summary_adapter
 
-    # When a health summary is ready, send it to discord
     def on_summary_ready(self, summary: HealthSummary) -> None:
         logger.info(f"Handling event: Health summary ready")
-        self._adapter.send_health_summary(summary)
+        self._health_summary_adapter.send_health_summary(summary)
 
-    # Send exception to discord
+
+class ErrorNotificationService:
+    def __init__(self, error_adapter: ErrorAdapter):
+        super().__init__()
+        self._error_adapter = error_adapter
+
     def on_exception(self, exception: Exception, stack_trace: str) -> None:
         logger.info(f"Handling event: Exception occurred")
-        self._adapter.send_exception(exception, stack_trace)
+        self._error_adapter.send_exception(exception, stack_trace)

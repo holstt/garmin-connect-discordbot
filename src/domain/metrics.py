@@ -139,6 +139,7 @@ class SleepMetrics(BaseMetric[SleepEntry, timedelta]):  # XXX: // SleepSummary
         )
         return timedelta(seconds=average_sleep_seconds)
 
+    # XXX: Remove this prop?
     @property
     def total(self) -> timedelta:
         return timedelta(
