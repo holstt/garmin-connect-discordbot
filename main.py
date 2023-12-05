@@ -38,8 +38,6 @@ def main(app_config: Config) -> None:
         raise e  # Re-raise to exit program
 
 
-from abc import ABC, abstractmethod
-
 if __name__ == "__main__":
     try:
         logging_helper.setup_logging(

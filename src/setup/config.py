@@ -90,8 +90,10 @@ def _get_notify_time(time_obj: time, time_zone_str: str) -> time:
 
 
 def get_config() -> Config:
+    # Read config into environment
     utils.load_env()
 
+    # Instance reads from environment using pydantic
     config = Config()  # type: ignore
     return config
 
