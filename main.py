@@ -28,7 +28,9 @@ def main(app_config: Config) -> None:
         # Add job and start scheduler
         scheduler = dependencies.scheduler
         scheduler.add_garmin_fetch_summary_job(
-            app_config.notify_time_of_day, job_name="garmin_weekly_summary_job"
+            app_config.notify_time_of_day,
+            job_name="garmin_weekly_summary_job",
+            should_run_if_missed=app_config.should_run_if_missed,
         )
         scheduler.run()
     except Exception as e:

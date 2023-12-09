@@ -43,6 +43,7 @@ class Config(BaseSettings):
     session_file_path: Optional[Path] = None
     webhook_error_url: Optional[str] = None  # XXX: Should be type DiscordUrl
     message_format: MessageFormat
+    should_run_if_missed: bool = False
 
     @validator("metrics", pre=True)
     def validate_metrics(

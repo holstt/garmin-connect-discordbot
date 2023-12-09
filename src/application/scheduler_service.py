@@ -50,30 +50,34 @@ class GarminFetchDataScheduler:
         self,
         fetch_start_time: time,
         job_name: str,
+        # Whether to run job immediately if we have passed its start time
+        should_run_if_missed: bool = False,
     ):
         # Check if job should be run immediately
         current_time = (
             self._time_provider.now()
         )  # FIX: not using time zone speficied by user
 
-        if fetch_start_time <= current_time.time():
-            logger.info(
-                f"Current time {current_time.time()} has passed notify time {fetch_start_time}, running job immediately"
-            )
-            # Run immediately if we have passed the start time
-            next_run_time = current_time + timedelta(
-                seconds=2
-            )  # Small delay to allow scheduler to start
-        else:
-            logger.info(
-                f"Current time {current_time.time()} has not passed notify time {fetch_start_time} yet, scheduling job as normal"
-            )
-            next_run_time = None
+        custom_start_time = None
+
+        if should_run_if_missed:
+            if fetch_start_time <= current_time.time():
+                logger.info(
+                    f"Current time {current_time.time()} has passed notify time {fetch_start_time}, running job immediately"
+                )
+                # Run immediately if we have passed the start time
+                custom_start_time = current_time + timedelta(
+                    seconds=2
+                )  # Small delay to allow scheduler to start
+            else:
+                logger.info(
+                    f"Current time {current_time.time()} has not passed notify time {fetch_start_time} yet, scheduling job as normal"
+                )
 
         self._add_garmin_fetch_summary_job(
             fetch_start_time=fetch_start_time,
             job_name=job_name,
-            next_run_time=next_run_time,
+            next_run_time=custom_start_time,
         )
 
     def _add_garmin_fetch_summary_job(
