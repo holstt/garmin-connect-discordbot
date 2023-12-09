@@ -1,6 +1,7 @@
 import logging
 import traceback
 from datetime import timedelta
+from os import environ
 from typing import Sequence
 
 import src.setup.config as config
@@ -39,12 +40,10 @@ def main(app_config: Config) -> None:
 
 
 if __name__ == "__main__":
+    log_level = logging_helper.get_log_level()
+
     try:
-        logging_helper.setup_logging(
-            module_logger_name=__name__,
-            base_log_level=logging.INFO
-            # module_logger_name=__name__, base_log_level=logging.DEBUG
-        )
+        logging_helper.setup_logging(base_log_level=log_level)
         app_config = config.get_config()
         logging_helper.add_password_filter(app_config.credentials.password)
         main(app_config)

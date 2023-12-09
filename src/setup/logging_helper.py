@@ -1,11 +1,30 @@
 import logging
+import os
 import time
+from math import log
+from os import environ
 from typing import Sequence
 
 logger = logging.getLogger(__name__)
 
 
-def setup_logging(module_logger_name: str, base_log_level: int = logging.INFO):
+# Read log level from env variable
+def get_log_level():
+    # Default log level
+    default_log_level = "INFO"
+    log_level_name = os.getenv("LOG_LEVEL", default_log_level).upper()
+
+    try:
+        return logging._nameToLevel[log_level_name]  # type: ignore
+    except KeyError:
+        valid_levels = ", ".join(logging._nameToLevel.keys())  # type: ignore
+        raise ValueError(
+            f"Invalid log level: {log_level_name}. Valid log levels are: {valid_levels}"
+        )
+
+
+def setup_logging(base_log_level: int = logging.INFO):
+    # Set root logger level
     logging.basicConfig(
         level=base_log_level,
         format="[%(asctime)s] [%(levelname)s] %(name)-30s %(message)s",
@@ -13,16 +32,9 @@ def setup_logging(module_logger_name: str, base_log_level: int = logging.INFO):
     )
     logging.Formatter.converter = time.gmtime  # Use UTC
 
-    # Always log debug messages from apscheduler to follow the scheduling process #XXX: We should probably just log it ourselves
-    # library_logger = logging.getLogger("apscheduler")
-    # library_logger.setLevel(logging.DEBUG)
-    # Always log debug messages from our own code XXX: For now, we should be consistent with the log level
-    logger = logging.getLogger(module_logger_name)
-    logger.setLevel(logging.DEBUG)
-
     # Hide debug messages from these libraries
-    always_info = ["matplotlib", "PIL"]
-    for logger_name in always_info:
+    disable_debug_loggers = ["matplotlib", "PIL"]
+    for logger_name in disable_debug_loggers:
         logging.getLogger(logger_name).setLevel(logging.INFO)
 
 
