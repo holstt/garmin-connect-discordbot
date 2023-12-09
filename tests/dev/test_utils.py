@@ -15,9 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 def base_setup(with_connect: bool = False):
-    logging_helper.setup_logging(
-        module_logger_name=__name__, base_log_level=logging.INFO
-    )
+    logging_helper.setup_logging(base_log_level=logging.INFO)
     app_config = config.get_config()
     logging_helper.add_password_filter(app_config.credentials.password)
 

@@ -60,14 +60,14 @@ class DiscordMessageTable(DiscordMessageBase):
         ]
         body = []
         for idx, view_model in enumerate(view_models):
-            body.append(self.to_table_row(view_model))
+            body.append(self._to_table_row(view_model))
             body.append([""] * len(header))
         table = table2ascii(header, body, style=style, alignments=alignments)
 
         table = f"```{table}```"
         super().__init__(summary.date, table)
 
-    def to_table_row(self, view_model: MetricViewModel) -> Sequence[str]:
+    def _to_table_row(self, view_model: MetricViewModel) -> Sequence[str]:
         return [
             view_model.icon,
             f"{view_model.latest}{view_model.out_of_max}",
@@ -87,14 +87,13 @@ class DiscordMessageLines(DiscordMessageBase):
         view_models = summary.metrics
         lines = ""
         for i, view_model in enumerate(view_models):
-            lines += self.to_line(view_model)
+            lines += self._to_line(view_model)
             # Add newline for every two metrics
             if i % 2 == 1:
                 lines += "\n"
-        lines = f"```{lines}```"
         super().__init__(summary.date, lines)
 
-    def to_line(self, view_model: MetricViewModel) -> str:
+    def _to_line(self, view_model: MetricViewModel) -> str:
         diff_to_target_str = (
             f", Δ {view_model.diff_to_target.target_name}: {view_model.diff_to_target.diff}"
             if view_model.diff_to_target
