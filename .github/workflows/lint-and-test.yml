@@ -1,0 +1,44 @@
+name: lint-and-test
+on:
+    push:
+        branches:
+            - "*"
+        paths-ignore:
+            - "**.md"
+            - "docs/**"
+    pull_request:
+        branches:
+            - "*"
+        paths-ignore:
+            - "**.md"
+            - "docs/**"
+
+jobs:
+    lint-and-test:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v3
+
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: "3.11"
+                  cache: "pip"
+
+            - name: Install Poetry
+              run: |
+                  pip install poetry
+                  poetry config virtualenvs.create false
+
+            - name: Install dependencies
+              run: poetry install
+
+            # Lint with type checking
+            - run: black --check .
+            - run: isort --check .
+            - run: pyright
+
+            - name: Run Tests
+              run: python -m pytest
