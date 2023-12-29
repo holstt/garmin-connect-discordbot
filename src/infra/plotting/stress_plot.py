@@ -117,9 +117,9 @@ def plot(
     for segment in plotting_data.stress_segments:
         ax.bar(
             x=plotting_data.dates,  # type: ignore
-            height=segment.normalized_values,
+            height=segment.normalized_values,  # type: ignore
             color=segment.color,
-            bottom=bar_bottoms,
+            bottom=bar_bottoms,  # type: ignore
             label=segment.name,
             # alpha=ALPHA,
             # width=bar_width,

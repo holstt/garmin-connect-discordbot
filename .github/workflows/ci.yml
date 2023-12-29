@@ -2,43 +2,54 @@ name: ci
 on:
     push:
         branches:
-            - "main"
-            - "dev"
-        paths:
-            - "**.py"
-            - "pyproject.toml"
-            - "poetry.lock"
-            - ".github/workflows/**.yml"
+            - "*"
+        paths-ignore:
+            - "**.md"
+            - "docs/**"
+    pull_request:
+        branches:
+            - "*"
+        paths-ignore:
+            - "**.md"
+            - "docs/**"
+
+env:
+    HAS_DEPS_CHANGED: false
 
 jobs:
-    checks:
+    lint-and-test:
         runs-on: ubuntu-latest
 
         steps:
             - name: Checkout repository
               uses: actions/checkout@v3
 
-            - run: |
-                  pip install poetry
-
             - name: Set up Python
               uses: actions/setup-python@v4
               with:
                   python-version: "3.11"
-                  cache: "poetry"
+                  cache: "pip"
 
-            # Install all deps. for pyright to be able to run type checking
-            - run: poetry install
+            - name: Install Poetry
+              run: |
+                  pip install poetry
+                  poetry config virtualenvs.create false
+
+            - name: Install dependencies
+              run: poetry install
 
             # Lint with type checking
-            - run: poetry run pyright src
-            # - run: poetry run black --check .
-            # - run: poetry run isort --check .
+            - run: black --check .
+            - run: isort --check .
+            - run: pyright
+
+            - name: Run Tests
+              run: python -m pytest
 
     # Update requirements.txt file (for non-poetry users) if the poetry dependencies change
     export-requirements:
         runs-on: ubuntu-latest
-        needs: checks
+        needs: lint-and-test
         permissions:
             contents: write
 
@@ -65,13 +76,13 @@ jobs:
                   if git diff --staged --exit-code -- requirements.txt; then
                       echo "No changes to requirements.txt"
                   else
-                      echo "HAS_CHANGES=true" >> $GITHUB_ENV
+                      echo "HAS_DEPS_CHANGED=true" >> $GITHUB_ENV
                   fi
               continue-on-error: true
 
             - name: Commit changes
               uses: EndBug/add-and-commit@v9
-              if: env.HAS_CHANGES == 'true'
+              if: env.HAS_DEPS_CHANGED
               with:
                   message: "[Automated] Update requirements.txt"
                   add: "requirements.txt"

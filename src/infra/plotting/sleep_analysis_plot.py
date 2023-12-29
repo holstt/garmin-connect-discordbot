@@ -89,7 +89,7 @@ def plot(
     ma_window_size: int,  # Window size of moving average
 ) -> Figure:
     fig = plt.figure(figsize=PLOT_SIZE)
-    gs = GridSpec(2, 2, width_ratios=[1, 0.5], height_ratios=[3, 2])
+    gs = GridSpec(2, 2, width_ratios=[1, 0.5], height_ratios=[3, 2])  # type: ignore
     week_plot = plt.subplot(gs[0, :])  # merge columns in this row
     four_weeks_plot = plt.subplot(gs[1, 0])
     waffle_plot = plt.subplot(gs[1, 1])
@@ -155,7 +155,7 @@ def plot_scores_dot(score_plot: Axes, sleep_score: SleepScoreMetrics, limit: int
     # Plot sleep score with its own y-axis
     line = score_plot.plot(
         [entry.calendarDate for entry in sleep_score.entries[-limit:]],  # type: ignore
-        [entry.value for entry in sleep_score.entries[-limit:]],
+        [entry.value for entry in sleep_score.entries[-limit:]],  # type: ignore
         color="black",
         label="Sleep Score",
         marker="o",
@@ -176,9 +176,9 @@ def plot_daily_stages(week_plot: Axes, plotting_data: SleepEachDay):
     for segment in plotting_data.sleep_stages:
         bar = week_plot.bar(
             x=plotting_data.dates,  # type: ignore
-            height=segment.values,
+            height=segment.values,  # type: ignore
             color=segment.color,
-            bottom=bar_bottoms,
+            bottom=bar_bottoms,  # type: ignore
             label=segment.name,
             # alpha=ALPHA,
             # width=bar_width,
@@ -217,7 +217,7 @@ def plot_moving_avg_stages(plot: Axes, plotting_data: SleepEachDay):
         # x axis is dates that where moving average is not None (i.e. not the first n days). We use the first segment, but should be the same for all
         [date for date, ma in zip(plotting_data.dates, plotting_data.sleep_stages[0].values_ma) if ma],  # type: ignore
         # y axis is the list of not None moving averages for each segment
-        [
+        [  # type: ignore
             [val_ma for val_ma in segment.values_ma if val_ma]
             for segment in plotting_data.sleep_stages
         ],
@@ -381,7 +381,7 @@ def _plot_waffle_chart_sleep_score(ax: Axes, model: SleepScoreMetrics):
     ax.tick_params(axis="both", which="both", length=0)
 
     # Set y-axis labels
-    ax.set_yticks([0.5, 6.5])
+    ax.set_yticks([0.5, 6.5])  # type: ignore
     ax.set_yticklabels(["Sun", "Mon"])
 
     ax.set_facecolor(color_background)  # type: ignore
@@ -500,7 +500,7 @@ def _plot_waffle_chart_sleep_duration(plot: Axes, dto: SleepMetrics):
     plot.set_title(f"Sleep Duration (Last {len(sleep_data)} Days)")
 
     # Set y-axis labels
-    plot.set_yticks([0.5, 6.5])  # For centering the labels
+    plot.set_yticks([0.5, 6.5])  # For centering the labels # type: ignore
     plot.set_yticklabels(["Sunday", "Monday"])
 
     # Remove gridlines
