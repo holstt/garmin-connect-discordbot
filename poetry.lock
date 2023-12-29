@@ -642,13 +642,13 @@ woff = ["brotli (>=1.0.1)", "brotlicffi (>=0.8.0)", "zopfli (>=0.1.4)"]
 
 [[package]]
 name = "garminconnect"
-version = "0.2.9"
+version = "0.2.11"
 description = "Python 3 API wrapper for Garmin Connect"
 optional = false
 python-versions = ">=3.10"
 files = [
-    {file = "garminconnect-0.2.9-py3-none-any.whl", hash = "sha256:0f029c86803d336ea550207396ec61509afabbe4352c3a67d6e75dd4ebfbe47d"},
-    {file = "garminconnect-0.2.9.tar.gz", hash = "sha256:559af52ec0316cc02b87df47106f212ac128721a03ee998f6558bf80aecd9008"},
+    {file = "garminconnect-0.2.11-py3-none-any.whl", hash = "sha256:39deae5257a17c4d6f57ca58225797ef92864ded8ac6a8ab34eff2e8ce3f27f1"},
+    {file = "garminconnect-0.2.11.tar.gz", hash = "sha256:0875a2534f8dcd0d3b1a4c9040a5b2dc5fbc1bf01d4489ebb8cecaba9ebccf84"},
 ]
 
 [package.dependencies]
@@ -2071,4 +2071,4 @@ requests = "*"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.11,<3.13"
-content-hash = "2945026cdf4d93d4e9f2487050ba4aa7f78e8c5cbcfdcd8c66690e9005e5fb83"
+content-hash = "d1e597a2215a3d21911c3892b99ba185da52fc468ae206ab786af47928e379a8"
