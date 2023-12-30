@@ -1,6 +1,6 @@
 # garmin-connect-discordbot
 
-[![ci](https://github.com/holstt/garmin-connect-discordbot/actions/workflows/ci.yml/badge.svg)](https://github.com/holstt/garmin-connect-discordbot/actions/workflows/ci.yml)
+[![cicd](https://github.com/holstt/garmin-connect-discordbot/actions/workflows/cicd.yml/badge.svg)](https://github.com/holstt/garmin-connect-discordbot/actions/workflows/cicd.yml)
 [![python](https://img.shields.io/badge/Python-3.11-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org)
 [![Poetry](https://img.shields.io/endpoint?url=https://python-poetry.org/badge/v0.json)](https://python-poetry.org/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
