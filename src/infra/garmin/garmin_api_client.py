@@ -62,20 +62,29 @@ class GarminApiClient:
                 logger.info(f"Succesfully logged in using session data")
                 return  # Early return if session data was valid
 
-            # XXX: Catch also GarminConnectAuthenticationError,  GarthHTTPError?
+            # XXX: Catch also GarminConnectAuthenticationError?
             # Fails if session data does not exist
             except FileNotFoundError as e:
                 logger.warning("Session data not found.")
             # Fails if session has expired/invalid
             except GarthHTTPError as e:
-                if e.error.response.status_code == 401:
+                if e.error.response.status_code == 401:  # type: ignore
+                    # 401 is not unexpected, as session data may have expired, so we just log a warning and continue with login using credentials
                     logger.warning("Session data invalid.")
                 else:
                     raise e
 
-        logger.info("Logging in using credentials.")
         # Login without session data (will use username/password)
-        self._base_client.login()  # XXX: What exceptions can be thrown here?
+        logger.info("Logging in using credentials.")
+
+        try:
+            self._base_client.login()
+        except GarthHTTPError as e:
+            # if e.error.response.status_code == 401:  # type: ignore
+            raise GarminApiClientError(
+                f"Failed to login to Garmin using credentials: {e}. Ensure credentials are correct."
+            ) from e
+
         logger.info("Login successful.")
         # Save the new session data
         if self._session_dir:
