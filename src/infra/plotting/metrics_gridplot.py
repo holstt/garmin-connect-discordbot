@@ -128,7 +128,7 @@ def _add_background_plot(
     moving_avgs = get_moving_average(plot_metric_full_no_none, MA_SIZE)
 
     ax_background.plot(
-        range(len(moving_avgs)),
+        range(len(moving_avgs)),  # type: ignore
         moving_avgs,  # type: ignore
         color=plot_metric.color,
         alpha=0.25,
@@ -203,7 +203,7 @@ def _plot_with_colormap(plot_metric: _GridPlotMetric, dates: Sequence[date], ax:
 
     # Create a linear segmented colormap from white to the input hex color
     custom_cmap = LinearSegmentedColormap.from_list(
-        "custom_cmap", ["white", plot_metric.color], N=256
+        "custom_cmap", ["white", plot_metric.color], N=256  # type: ignore
     )
 
     # normalize between 0 and 1, using the min and max values of the data

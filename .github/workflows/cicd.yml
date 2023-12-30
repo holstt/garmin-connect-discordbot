@@ -1,0 +1,26 @@
+name: cicd
+
+on:
+    push:
+        branches:
+            - "*"
+        paths-ignore:
+            - "**.md"
+            - "docs/**"
+    pull_request:
+        branches:
+            - "*"
+        paths-ignore:
+            - "**.md"
+            - "docs/**"
+
+jobs:
+    lint-and-test:
+        uses: ./.github/workflows/lint-and-test.yml
+
+    # Only runs on push to main branch
+    build-and-push:
+        needs: lint-and-test
+        uses: ./.github/workflows/build-and-push.yml
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        secrets: inherit

@@ -68,7 +68,7 @@ class GarminApiClient:
                 logger.warning("Session data not found.")
             # Fails if session has expired/invalid
             except GarthHTTPError as e:
-                if e.error.response.status_code == 401:
+                if e.error.response.status_code == 401:  # type: ignore
                     logger.warning("Session data invalid.")
                 else:
                     raise e
