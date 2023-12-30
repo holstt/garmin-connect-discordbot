@@ -1,0 +1,19 @@
+version: "3.8"
+
+name: garmin
+
+services:
+    app:
+        restart: "on-failure:5"
+        pull_policy: always # Ensure we always pull to get the latest image
+        image: ${DOCKER_REPO_NAME?}:latest-${SERVICE_NAME?}
+
+        user: "garmin-connect-bot:garmin-connect-bot" # Run as this (unprivileged) user instead of root.
+
+        env_file:
+            - ../.env.prod
+
+        # NB: Ensure mounted paths exist on host with correct permissions for the specified container user
+        volumes:
+            - ../data:/app/data # User should have read/write access to data directory
+
