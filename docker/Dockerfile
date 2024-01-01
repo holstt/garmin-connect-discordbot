@@ -20,17 +20,10 @@ RUN poetry install --no-dev
 COPY ./main.py .
 COPY ./src ./src
 
-ENTRYPOINT poetry run python main.py
+COPY ./docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Ensure non-root user, then run the app.
-# ENTRYPOINT \
-#   echo "Running as user: $(whoami) $(id -u):$(id -g)" && \
-#   if [ $(id -u) -eq 0 ] || [ $(id -G | grep -w 0) ]; then \
-#     echo 'Error: The container must not run as root or be part of root group.' \
-#     exit 1; \
-#   else \
-#     poetry run python main.py; \
-#   fi;
+ENTRYPOINT ["/entrypoint.sh"]
 
 # Uncomment to keep the container running for debugging.
 # ENTRYPOINT echo "Sleeping..." && sleep infinity

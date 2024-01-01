@@ -11,9 +11,9 @@ services:
             context: ..
             dockerfile: docker/Dockerfile
 
+        command: ["--allow-root"]
         env_file:
             - ../../dev.env
-
         volumes:
             - ../../data:/app/data
 
