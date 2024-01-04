@@ -100,33 +100,22 @@ python ./main.py
 cd docker
 ```
 
-**4. Option 1: Run the Docker Compose project with restrictive permissions**
+**4. Option 1: Simple setup**
 
-`./docker` includes convenient scripts to simplify setting up and running the Docker container with `docker.dev.sh` and `docker.prod.sh` being the entrypoints. These scripts handle the creation of a dedicated Docker user, a container data directory on the host, and apply restrictive permissions on the data directory and environment file before running the container. Inspect the configuration in the scripts, and verify that the assumed host paths match your file structure.
-
-Ensure scripts are executable:
+Ensure the paths in `docker-compose.yml` are correct, then run:
 
 ```bash
-chmod +x docker_run.sh docker.dev.sh docker.prod.sh
+docker-compose up -d
+# or
+docker-compose up -d && docker-compose logs -f
 ```
 
-Then run the script for your environment, e.g.:
+**4. Option 2: Use helper script**
 
-```bash
-./docker.prod.sh
-```
-
-**4. Option 2: Run the Docker Compose project without restrictive permissions**
-For a less restrictive/simpler setup, you can edit and use the `docker-compose.yml` file directly. Replace the environment variables for the volume paths with concrete values matching your file structure and remove the `user` property to run the container as root. Then in the Dockerfile, remove the original `ENTRYPOINT` instruction and uncomment the simple `ENTRYPOINT` instruction that does not prevent the container from running as root.
+The `./docker/docker.prod.sh` helper script will handle the creation of a dedicated Docker user, a container data directory on the host, and apply restrictive permissions on the data directory and environment file before running the container. Please ensure the configuration in the `docker.prod.sh` and `docker-compose.prod.yml` files are correct.
 
 Then run:
 
 ```bash
-docker compose up --build
-```
-
-or to keep it running in the background:
-
-```bash
-docker compose up -d --build && docker compose logs -f
+sudo ./docker.prod.sh
 ```
