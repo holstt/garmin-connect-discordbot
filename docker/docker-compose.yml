@@ -21,3 +21,4 @@ services:
             - PYTHONUNBUFFERED=1 # Prevents Python from buffering stdout and stder
             # Overwrite the session path in the .env file, if this is different when running in docker (should be the same path as the data volume under "volumes" above)
             - SESSION_FILE_PATH=/app/data
+            - POETRY_VIRTUALENVS_CREATE=false
