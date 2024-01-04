@@ -5,6 +5,9 @@ name: garmin
 # Docker compose config for development. First ensure host paths are correct, then run:
 # docker-compose up --build
 
+# For running as interactive shell if you want to enter credentials manually (i.e. if not provided in .env file), use:
+# docker compose run app
+
 services:
     app:
         build:
@@ -12,6 +15,7 @@ services:
             dockerfile: docker/Dockerfile
 
         command: ["--allow-root"]
+
         env_file:
             - ../../dev.env
         volumes:
