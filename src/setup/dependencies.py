@@ -17,11 +17,11 @@ from src.presentation.notification_service import (
     HealthSummaryNotificationService,
 )
 from src.setup.config import Config
-from src.setup.registry_setup import (
+from src.setup.init_factories import (
     build_fetcher_registry,
     build_message_strategy,
     build_plotting_strategies,
-    build_to_dto_converter_registry,
+    build_response_to_dto_converter_factory,
     build_to_model_converter_registry,
     build_to_vm_converter_registry,
 )
@@ -54,7 +54,7 @@ def resolve(app_config: Config) -> Dependencies:
     garmin_adapter = GarminApiAdapter(garmin_client)
 
     fetcher_registry = build_fetcher_registry(garmin_client)
-    to_dto_converter_registry = build_to_dto_converter_registry()
+    to_dto_converter_factory = build_response_to_dto_converter_factory()
     to_model_converter_registry = build_to_model_converter_registry()
     to_vm_converter_registry = build_to_vm_converter_registry()
     plotting_strategies = build_plotting_strategies()
@@ -63,7 +63,7 @@ def resolve(app_config: Config) -> Dependencies:
     garmin_service = GarminService(
         garmin_adapter,
         fetcher_registry,
-        to_dto_converter_registry,
+        to_dto_converter_factory,
         to_model_converter_registry,
         metrics_to_include=app_config.metrics,
     )

@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import Any, Callable, Generic, NamedTuple, Sequence, TypeVar
 
 from src.domain.common import DatePeriod
@@ -15,6 +14,8 @@ from src.infra.garmin.garmin_api_client import (
 from src.presentation.view_models import MetricPlot, MetricViewModel
 from src.setup.garmin_metrid_ids import GarminMetricId
 
+# from src.setup.init_factories import ResponseToDtoConverter
+
 # TODO: Create all registries from generic registry class
 
 
@@ -26,6 +27,39 @@ class ApiResponse(NamedTuple):
 T = TypeVar("T")  # Input type
 U = TypeVar("U")  # Output type
 Converter = Callable[[T], U]
+
+K = TypeVar("K")  # Key type
+V = TypeVar("V")  # Value type
+
+
+# Factory as a dict wrapper for safe access
+class Factory(Generic[K, V]):
+    def __init__(self):
+        super().__init__()
+        self._values: dict[K, V] = {}
+
+    def register(self, key: K, value: V):
+        if key in self._values:
+            raise ValueError(f"Factory already contains key: {key}")
+        self._values[key] = value
+
+    def remove(self, key: K):
+        if key not in self._values:
+            raise ValueError(f"Factory does not contain key: {key}")
+        del self._values[key]
+
+    def get(self, key: K) -> V:
+        if key not in self._values:
+            raise ValueError(f"Factory does not contain key: {key}")
+        val = self._values[key]
+        return val
+
+
+# Factory types
+ResponseToDtoConverter = Callable[
+    [JsonResponseType], GarminResponseDto[GarminResponseEntryDto]
+]
+ResponseToDtoConverterFactory = Factory[GarminEndpoint, ResponseToDtoConverter]
 
 
 class Registry(Generic[T, U]):
@@ -63,26 +97,21 @@ class FetcherRegistry:
         return func(period, self._client)
 
 
-ResponseToDtoConverter = Callable[
-    [JsonResponseType], GarminResponseDto[GarminResponseEntryDto]
-]
+# class ResponseToDtoConverterRegistry:
+#     def __init__(self):
+#         super().__init__()
+#         self._converters: dict[GarminEndpoint, ResponseToDtoConverter] = {}
 
+#     def register(self, endpoint: GarminEndpoint, converter: ResponseToDtoConverter):
+#         self._converters[endpoint] = converter
 
-class ResponseToDtoConverterRegistry:
-    def __init__(self):
-        super().__init__()
-        self._converters: dict[GarminEndpoint, ResponseToDtoConverter] = {}
-
-    def register(self, endpoint: GarminEndpoint, converter: ResponseToDtoConverter):
-        self._converters[endpoint] = converter
-
-    def convert(
-        self, endpoint: GarminEndpoint, data: JsonResponseType
-    ) -> GarminResponseDto[GarminResponseEntryDto]:
-        if endpoint not in self._converters:
-            raise ValueError(f"No converter found for {endpoint}")
-        func = self._converters[endpoint]
-        return func(data)
+#     def convert(
+#         self, endpoint: GarminEndpoint, data: JsonResponseType
+#     ) -> GarminResponseDto[GarminResponseEntryDto]:
+#         if endpoint not in self._converters:
+#             raise ValueError(f"No converter found for {endpoint}")
+#         func = self._converters[endpoint]
+#         return func(data)
 
 
 DtoToModelConverterRegistry = Registry[
@@ -129,11 +158,11 @@ DtoToModelConverter = Callable[
 ]
 
 
-class CentralizedRegistry(NamedTuple):
-    fetcher_registry: FetcherRegistry
-    response_to_dto_converter_registry: ResponseToDtoConverterRegistry
-    dto_to_model_converter_registry: DtoToModelConverterRegistry
-    model_to_vm_converter_registry: ModelToVmConverterRegistry
+# class CentralizedRegistry(NamedTuple):
+#     fetcher_registry: FetcherRegistry
+#     response_to_dto_converter_registry: ResponseToDtoConverterRegistry
+#     dto_to_model_converter_registry: DtoToModelConverterRegistry
+#     model_to_vm_converter_registry: ModelToVmConverterRegistry
 
 
 # XXX: Registry ensure all required components registered for a metric (not used atm)
@@ -144,7 +173,7 @@ class CentralizedRegistry(NamedTuple):
 #         self._response_to_dto_converter_registry = ResponseToDtoConverterRegistry()
 #         self._dto_to_model_converter_registry = DtoToModelConverterRegistry()
 #         self._model_to_vm_converter_registry = ModelToVmConverterRegistry()
-
+# Add entire metric pipeline
 #     def add_metric(
 #         self,
 #         metric_id: GarminMetricId,

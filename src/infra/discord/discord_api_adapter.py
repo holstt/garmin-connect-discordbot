@@ -15,7 +15,7 @@ from src.presentation.view_models import (
     MetricPlot,
     MetricViewModel,
 )
-from src.setup.registry import ModelToVmConverterRegistry, PlottingStrategy
+from src.setup.factories import ModelToVmConverterRegistry, PlottingStrategy
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from src.domain.common import DatePeriod
 from src.infra.garmin.dtos import *
 from src.infra.garmin.garmin_api_adapter import GarminApiAdapter
 from src.setup.garmin_metrid_ids import GarminMetricId
-from src.setup.registry import *
+from src.setup.factories import *
 
 logger = logging.getLogger(__name__)
 
@@ -21,14 +21,14 @@ class GarminService:
         self,
         client: GarminApiAdapter,
         fetcher_registry: FetcherRegistry,
-        response_to_dto_converter_registry: ResponseToDtoConverterRegistry,
+        response_to_dto_converter_factory: ResponseToDtoConverterFactory,
         dto_to_model_converter_registry: DtoToModelConverterRegistry,
         metrics_to_include: Sequence[GarminMetricId],
     ):
         super().__init__()
         self._client = client
         self._fetcher_registry = fetcher_registry
-        self._response_to_dto_converter_registry = response_to_dto_converter_registry
+        self._response_to_dto_converter_factory = response_to_dto_converter_factory
         self._dto_to_model_converter_registry = dto_to_model_converter_registry
         self._metrics_to_include = metrics_to_include
 
@@ -62,9 +62,10 @@ class GarminService:
                 )
                 return None
 
-            dto = self._response_to_dto_converter_registry.convert(
-                response.endpoint, response.data
+            convert_to_dto_func = self._response_to_dto_converter_factory.get(
+                response.endpoint
             )
+            dto = convert_to_dto_func(response.data)
 
             logger.debug(f"Got {metric} data with num entries: {len(dto.entries)}")
 

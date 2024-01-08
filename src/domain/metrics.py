@@ -1,27 +1,13 @@
 import datetime
-from abc import ABC, abstractmethod
+from abc import ABC
 from copy import copy
 from dataclasses import dataclass
 from datetime import timedelta
-from io import BytesIO
 
-# T = TypeVar("T")
 from typing import Any, Callable, Generic, Optional, Sequence, TypeVar
 
 from src.consts import DAYS_IN_WEEK
-from src.infra.garmin.dtos.garmin_bb_response import BbEntry, GarminBbResponse
-from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse, HrvSummary
-from src.infra.garmin.dtos.garmin_response import GarminResponseEntryDto
-from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse, RhrEntry
-from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse, SleepEntry
-from src.infra.garmin.dtos.garmin_sleep_score_response import (
-    GarminSleepScoreResponse,
-    SleepScoreEntry,
-)
-from src.infra.garmin.dtos.garmin_stress_response import (
-    GarminStressResponse,
-    StressEntry,
-)
+from src.infra.garmin.dtos import *
 
 L = TypeVar("L", covariant=True)  # List type
 R = TypeVar("R")  # Return type

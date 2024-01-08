@@ -14,12 +14,7 @@ from src.domain.metrics import (
     SleepScoreMetrics,
     StressMetrics,
 )
-from src.infra.garmin.dtos.garmin_bb_response import GarminBbResponse
-from src.infra.garmin.dtos.garmin_hrv_response import GarminHrvResponse
-from src.infra.garmin.dtos.garmin_rhr_response import GarminRhrResponse
-from src.infra.garmin.dtos.garmin_sleep_response import GarminSleepResponse
-from src.infra.garmin.dtos.garmin_sleep_score_response import GarminSleepScoreResponse
-from src.infra.garmin.dtos.garmin_stress_response import GarminStressResponse
+from src.infra.garmin.dtos import *
 from src.infra.garmin.garmin_api_client import (
     GarminApiClient,
     GarminEndpoint,
@@ -31,13 +26,14 @@ from src.infra.plotting.plotting_service import (
 )
 from src.presentation.discord_messages import DiscordMessageLines, DiscordMessageTable
 from src.setup.message_formats import MessageFormat
-from src.setup.registry import *
+from src.setup.factories import *
 from src.utils import find_first_of_type
 
 logger = logging.getLogger(__name__)
 # TODO: Create class resp. for adding a metric to the pipeline
 
 
+# Fetcher
 def build_fetcher_registry(api_client: GarminApiClient) -> FetcherRegistry:
     reg = FetcherRegistry(api_client)
     reg.register(GarminMetricId.SLEEP, build_fetcher(GarminEndpoint.DAILY_SLEEP))
@@ -52,23 +48,30 @@ def build_fetcher_registry(api_client: GarminApiClient) -> FetcherRegistry:
     return reg
 
 
-def build_to_dto_converter_registry() -> ResponseToDtoConverterRegistry:
-    reg = ResponseToDtoConverterRegistry()
+# Response to dto converter
+def build_response_to_dto_converter_factory() -> (
+    Factory[GarminEndpoint, ResponseToDtoConverter]
+):
+    factory = Factory[GarminEndpoint, ResponseToDtoConverter]()
 
-    reg.register(
+    factory.register(
         GarminEndpoint.DAILY_SLEEP, build_to_dto_converter(GarminSleepResponse)
     )
-    reg.register(GarminEndpoint.DAILY_RHR, build_to_dto_converter(GarminRhrResponse))
-    reg.register(
+    factory.register(
+        GarminEndpoint.DAILY_RHR, build_to_dto_converter(GarminRhrResponse)
+    )
+    factory.register(
         GarminEndpoint.DAILY_SLEEP_SCORE,
         build_to_dto_converter(GarminSleepScoreResponse),
     )
-    reg.register(GarminEndpoint.DAILY_BB, build_to_dto_converter(GarminBbResponse))
-    reg.register(GarminEndpoint.DAILY_HRV, build_to_dto_converter(GarminHrvResponse))
-    reg.register(
+    factory.register(GarminEndpoint.DAILY_BB, build_to_dto_converter(GarminBbResponse))
+    factory.register(
+        GarminEndpoint.DAILY_HRV, build_to_dto_converter(GarminHrvResponse)
+    )
+    factory.register(
         GarminEndpoint.DAILY_STRESS, build_to_dto_converter(GarminStressResponse)
     )
-    return reg
+    return factory
 
 
 def build_to_model_converter_registry() -> DtoToModelConverterRegistry:
