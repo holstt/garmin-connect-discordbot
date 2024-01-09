@@ -34,18 +34,44 @@ logger = logging.getLogger(__name__)
 
 
 # Fetcher
-def build_fetcher_registry(api_client: GarminApiClient) -> FetcherRegistry:
-    reg = FetcherRegistry(api_client)
-    reg.register(GarminMetricId.SLEEP, build_fetcher(GarminEndpoint.DAILY_SLEEP))
-    reg.register(GarminMetricId.RHR, build_fetcher(GarminEndpoint.DAILY_RHR))
-    reg.register(
+# def build_fetcher_registry(api_client: GarminApiClient) -> FetcherRegistry:
+#     reg = FetcherRegistry(api_client)
+#     reg.register(GarminMetricId.SLEEP, build_fetcher(GarminEndpoint.DAILY_SLEEP))
+#     reg.register(GarminMetricId.RHR, build_fetcher(GarminEndpoint.DAILY_RHR))
+#     reg.register(
+#         GarminMetricId.SLEEP_SCORE, build_fetcher(GarminEndpoint.DAILY_SLEEP_SCORE)
+#     )
+#     reg.register(GarminMetricId.BB, build_fetcher(GarminEndpoint.DAILY_BB))
+#     reg.register(GarminMetricId.HRV, build_fetcher(GarminEndpoint.DAILY_HRV))
+#     reg.register(GarminMetricId.STRESS, build_fetcher(GarminEndpoint.DAILY_STRESS))
+
+#     return reg
+
+
+# XXX: Client per fetcher?
+def build_fetcher_factory(
+    api_client: GarminApiClient,
+) -> Factory[GarminMetricId, Fetcher]:
+    factory = Factory[GarminMetricId, Fetcher]()
+
+    factory.register(GarminMetricId.SLEEP, build_fetcher(GarminEndpoint.DAILY_SLEEP))
+    factory.register(GarminMetricId.RHR, build_fetcher(GarminEndpoint.DAILY_RHR))
+    factory.register(
         GarminMetricId.SLEEP_SCORE, build_fetcher(GarminEndpoint.DAILY_SLEEP_SCORE)
     )
-    reg.register(GarminMetricId.BB, build_fetcher(GarminEndpoint.DAILY_BB))
-    reg.register(GarminMetricId.HRV, build_fetcher(GarminEndpoint.DAILY_HRV))
-    reg.register(GarminMetricId.STRESS, build_fetcher(GarminEndpoint.DAILY_STRESS))
+    factory.register(GarminMetricId.BB, build_fetcher(GarminEndpoint.DAILY_BB))
+    factory.register(GarminMetricId.HRV, build_fetcher(GarminEndpoint.DAILY_HRV))
+    factory.register(GarminMetricId.STRESS, build_fetcher(GarminEndpoint.DAILY_STRESS))
 
-    return reg
+    return factory
+
+
+def build_fetcher(endpoint: GarminEndpoint) -> Fetcher:
+    def fetcher(period: DatePeriod, api_client: GarminApiClient) -> ApiResponse:
+        data: JsonResponseType | None = api_client.get_data(endpoint, period)
+        return ApiResponse(data, endpoint)
+
+    return fetcher
 
 
 # Response to dto converter
@@ -156,14 +182,6 @@ def build_to_vm_converter_registry() -> ModelToVmConverterRegistry:
     )
 
     return reg
-
-
-def build_fetcher(endpoint: GarminEndpoint) -> Fetcher:
-    def fetcher(period: DatePeriod, api_client: GarminApiClient) -> ApiResponse:
-        data: JsonResponseType | None = api_client.get_data(endpoint, period)
-        return ApiResponse(data, endpoint)
-
-    return fetcher
 
 
 def build_to_dto_converter(

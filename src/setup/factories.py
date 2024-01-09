@@ -59,7 +59,23 @@ class Factory(Generic[K, V]):
 ResponseToDtoConverter = Callable[
     [JsonResponseType], GarminResponseDto[GarminResponseEntryDto]
 ]
-ResponseToDtoConverterFactory = Factory[GarminEndpoint, ResponseToDtoConverter]
+Fetcher = Callable[[DatePeriod, GarminApiClient], ApiResponse]
+
+
+# class FetcherRegistry:
+#     def __init__(self, api_client: GarminApiClient):
+#         super().__init__()
+#         self._fetchers: dict[GarminMetricId, Fetcher] = {}
+#         self._client = api_client
+
+#     def register(self, id: GarminMetricId, fetcher: Fetcher):
+#         self._fetchers[id] = fetcher
+
+#     def fetch(self, id: GarminMetricId, period: DatePeriod) -> ApiResponse:
+#         if id not in self._fetchers:
+#             raise ValueError(f"No fetcher found for {id}")
+#         func = self._fetchers[id]
+#         return func(period, self._client)
 
 
 class Registry(Generic[T, U]):
@@ -76,25 +92,6 @@ class Registry(Generic[T, U]):
             raise ValueError(f"No converter found for {instance_type}")
         func = self._converters[instance_type]
         return func(instance)
-
-
-Fetcher = Callable[[DatePeriod, GarminApiClient], ApiResponse]
-
-
-class FetcherRegistry:
-    def __init__(self, api_client: GarminApiClient):
-        super().__init__()
-        self._fetchers: dict[GarminMetricId, Fetcher] = {}
-        self._client = api_client
-
-    def register(self, id: GarminMetricId, fetcher: Fetcher):
-        self._fetchers[id] = fetcher
-
-    def fetch(self, id: GarminMetricId, period: DatePeriod) -> ApiResponse:
-        if id not in self._fetchers:
-            raise ValueError(f"No fetcher found for {id}")
-        func = self._fetchers[id]
-        return func(period, self._client)
 
 
 # class ResponseToDtoConverterRegistry:

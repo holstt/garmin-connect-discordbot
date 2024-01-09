@@ -61,6 +61,10 @@ class GarminFetchDataScheduler:
         custom_start_time = None
 
         if should_run_if_missed:
+            logger.info(
+                f"Job should run if missed. Checking if we have passed the notify time..."
+            )
+
             if fetch_start_time <= current_time.time():
                 logger.info(
                     f"Current time {current_time.time()} has passed notify time {fetch_start_time}, running job immediately"

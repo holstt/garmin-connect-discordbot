@@ -25,6 +25,8 @@ dto_to_endpoint = {
     GarminBbResponse: GarminEndpoint.DAILY_BB,
 }
 
+# NOT IN USE: Replaced by plugin pattern/factories
+
 
 # Adapts the GarminApiClient to return DTOs instead of json dict
 class GarminApiAdapter:

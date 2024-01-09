@@ -1,13 +1,9 @@
 import logging
 import traceback
-from datetime import timedelta
-from os import environ
-from typing import Sequence
 
 import src.setup.config as config
 import src.setup.dependencies as dependency_resolver
 import src.setup.logging_helper as logging_helper
-from src import utils
 from src.setup.config import Config
 
 logger = logging.getLogger(__name__)
@@ -29,8 +25,8 @@ def main(app_config: Config) -> None:
         scheduler = dependencies.scheduler
         scheduler.add_garmin_fetch_summary_job(
             app_config.notify_time_of_day,
-            job_name="garmin_weekly_summary_job",
-            should_run_if_missed=app_config.should_run_if_missed,
+            "garmin_weekly_summary_job",
+            app_config.should_run_if_missed,
         )
         scheduler.run()
     except Exception as e:

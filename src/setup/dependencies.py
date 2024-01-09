@@ -18,7 +18,7 @@ from src.presentation.notification_service import (
 )
 from src.setup.config import Config
 from src.setup.init_factories import (
-    build_fetcher_registry,
+    build_fetcher_factory,
     build_message_strategy,
     build_plotting_strategies,
     build_response_to_dto_converter_factory,
@@ -53,7 +53,7 @@ def resolve(app_config: Config) -> Dependencies:
     )
     garmin_adapter = GarminApiAdapter(garmin_client)
 
-    fetcher_registry = build_fetcher_registry(garmin_client)
+    fetcher_factory = build_fetcher_factory(garmin_client)
     to_dto_converter_factory = build_response_to_dto_converter_factory()
     to_model_converter_registry = build_to_model_converter_registry()
     to_vm_converter_registry = build_to_vm_converter_registry()
@@ -61,8 +61,8 @@ def resolve(app_config: Config) -> Dependencies:
     message_strategy = build_message_strategy(app_config.message_format)
 
     garmin_service = GarminService(
-        garmin_adapter,
-        fetcher_registry,
+        garmin_client,
+        fetcher_factory,
         to_dto_converter_factory,
         to_model_converter_registry,
         metrics_to_include=app_config.metrics,
