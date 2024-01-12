@@ -59,7 +59,7 @@ class Factory(Generic[K, V]):
 ResponseToDtoConverter = Callable[
     [JsonResponseType], GarminResponseDto[GarminResponseEntryDto]
 ]
-Fetcher = Callable[[DatePeriod, GarminApiClient], ApiResponse]
+Fetcher = Callable[[DatePeriod], ApiResponse]
 
 
 # class FetcherRegistry:

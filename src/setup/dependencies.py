@@ -27,6 +27,7 @@ from src.setup.init_factories import (
 )
 
 # TODO: Use DI framework
+# Creates all dependencies used in the application
 
 
 class Dependencies(NamedTuple):
@@ -61,7 +62,7 @@ def resolve(app_config: Config) -> Dependencies:
     message_strategy = build_message_strategy(app_config.message_format)
 
     garmin_service = GarminService(
-        garmin_client,
+        # garmin_client,
         fetcher_factory,
         to_dto_converter_factory,
         to_model_converter_registry,

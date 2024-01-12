@@ -19,7 +19,7 @@ from typing import Optional
 class GarminService:
     def __init__(
         self,
-        client: GarminApiClient,
+        # client: GarminApiClient,
         fetcher_factory: Factory[GarminMetricId, Fetcher],
         response_to_dto_converter_factory: Factory[
             GarminEndpoint, ResponseToDtoConverter
@@ -28,7 +28,7 @@ class GarminService:
         metrics_to_include: Sequence[GarminMetricId],
     ):
         super().__init__()
-        self._client = client
+        # self._client = client
         self._fetcher_factory = fetcher_factory
         self._response_to_dto_converter_factory = response_to_dto_converter_factory
         self._dto_to_model_converter_registry = dto_to_model_converter_registry
@@ -55,7 +55,7 @@ class GarminService:
         for metric in self._metrics_to_include:
             # Fetch this metric data
             fetcher = self._fetcher_factory.get(metric)
-            response = fetcher(period, self._client)
+            response = fetcher(period)
             # response = self._fetcher_factory.fetch(metric, period)
 
             # Early return in case of missing data to avoid additional requests
