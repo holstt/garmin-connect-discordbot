@@ -14,13 +14,13 @@ from src.utils import to_YYYYMMDD
 logger = logging.getLogger(__name__)
 
 
-def base_setup(with_connect: bool = False):
+def base_setup(with_login: bool = False):
     logging_helper.setup_logging(base_log_level=logging.INFO)
     app_config = config.get_config()
     logging_helper.add_password_filter(app_config.credentials.password)
 
     dependencies = dependency_resolver.resolve(app_config)
-    if with_connect:
+    if with_login:
         dependencies.garmin_api_client.login()
     return dependencies
 

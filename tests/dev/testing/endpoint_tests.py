@@ -12,7 +12,7 @@ from src.infra.garmin.garmin_api_adapter import GarminApiAdapter
 from src.infra.garmin.garmin_api_client import GarminApiClient
 from src.infra.time_provider import TimeProvider
 from src.setup import config, logging_helper
-from tests.dev.test_utils import base_setup
+from tests.dev.utils.test_utils import base_setup
 
 logging_helper.setup_logging(module_logger_name=__name__, base_log_level=logging.DEBUG)
 app_config = config.get_config()

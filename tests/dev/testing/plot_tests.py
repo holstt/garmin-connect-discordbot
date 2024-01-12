@@ -9,7 +9,7 @@ from src.infra.garmin.dtos import *
 from src.infra.plotting import metrics_gridplot
 from src.infra.plotting.sleep_analysis_plot import plot as plot_sleep
 from src.infra.plotting.stress_plot import plot as plot_stress
-from tests.dev.test_utils import load_dto_from_file
+from tests.dev.utils.test_utils import load_dto_from_file
 
 ##############################################
 # DEV TESTING FOR PLOTTING
